@@ -53,7 +53,7 @@ export function MessageViewerDialog({
     try {
       setLoading(true);
       const response = await api_client.getConversationHistory(conversationId, currentPage, 20);
-      if (response.success) {
+      if (response.success && response.data) {
         setMessages(response.data.messages);
         setPagination(response.data.pagination);
         setTotalPages(response.data.pagination.totalPages);
@@ -125,7 +125,7 @@ export function MessageViewerDialog({
       
       // Update pagination
       if (pagination) {
-        setPagination(prev => ({
+        setPagination((prev: any) => ({
           ...prev,
           totalCount: prev.totalCount - 1
         }));

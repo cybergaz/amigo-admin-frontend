@@ -48,8 +48,8 @@ export function MemberManagementDialog({
   const loadAllUsers = async () => {
     try {
       setLoading(true);
-      const response = await api_client.getAllUsers(1, 100, "");
-      if (response.success) {
+      const response = await api_client.getUsers(1, 100, "");
+      if (response.success && response.data) {
         // Filter out users who are already members
         const currentMemberIds = currentMembers.map(m => m.userId);
         const availableUsers = response.data.users.filter(

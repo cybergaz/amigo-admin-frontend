@@ -81,6 +81,9 @@ interface CommunityGroup {
   type: string;
   metadata?: any;
   created_at: string;
+  active_time_slots?: Array<{ start_time: string; end_time: string }>;
+  timezone?: string;
+  active_days?: number[];
   members?: Array<{
     id: number;
     user_id: number;

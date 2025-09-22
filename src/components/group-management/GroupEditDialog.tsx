@@ -66,7 +66,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
 
     try {
       setMembersLoading(true);
-      const response = await api_client.getGroupInfo(group.id);
+      const response = await api_client.getChatManagementGroupDetails(group.id);
       console.log('Group info response:', response); // Debug log
 
       if (response.success && response.data) {
