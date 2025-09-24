@@ -45,8 +45,9 @@ export default function LoginPage() {
 
     try {
       const result = await loginWithEmail({ email, password });
-
       if (result.success) {
+        document.cookie = `access_token=${result.data?.access_token}; path=/; max-age=3600;`;
+
         toast.success("Login successful! Welcome to Amigo Admin Panel");
         router.push("/dashboard"); // Redirect to dashboard after successful login
       } else {
