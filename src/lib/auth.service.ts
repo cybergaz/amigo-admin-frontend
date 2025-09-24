@@ -26,6 +26,10 @@ const decode_payload_from_token = (token: string) => {
 const handle_logout = async (router: AppRouterInstance) => {
 
   try {
+
+    document.cookie = "access_token=; path=/; max-age=0;";
+    document.cookie = "refresh_token=; path=/; max-age=0;";
+
     const res = await api_client.makeRequest("/auth/logout")
 
     if (res.success) {
