@@ -111,7 +111,17 @@ interface StandaloneGroup {
   }>;
 }
 
+
+const get_token_from_cookies = () => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(^| )' + 'access_token' + '=([^;]+)'));
+  if (match) return match[2];
+  return null;
+}
+
 class ApiClient {
+
+  token = get_token_from_cookies();
 
   async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
 
@@ -120,6 +130,7 @@ class ApiClient {
     const defaultOptions: RequestInit = {
       headers: {
         "Content-Type": "application/json",
+        "Authorization": this.token ? `Bearer ${this.token}` : "",
         ...options.headers,
       },
       credentials: "include",
