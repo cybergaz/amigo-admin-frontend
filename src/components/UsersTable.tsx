@@ -99,6 +99,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
       );
       const data = await response.json();
+      console.log("data ->", data)
 
       if (data.status === 'OK' && data.results.length > 0) {
         const result = data.results[0];
@@ -456,7 +457,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                     {locationInfo.address && (
                       <div className="flex justify-between">
                         <span>Address:</span>
-                        <span className="text-right max-w-[200px] truncate">{locationInfo.address}</span>
+                        <span className="text-right max-w-[200px]">{locationInfo.address}</span>
                       </div>
                     )}
                   </div>
