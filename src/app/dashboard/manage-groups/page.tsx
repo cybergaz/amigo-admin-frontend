@@ -77,19 +77,10 @@ export default function ManageGroups() {
         setCommunities(communitiesWithDetails);
       }
 
-      if (groupsRes.success && groupsRes.data) {
-        // Fetch member details for standalone groups
-        const groupsWithMembers = await Promise.all(
-          groupsRes.data.map(async (group) => {
-            const groupInfoRes = await api_client.getGroupInfo(group.id);
-            return {
-              ...group,
-              members: groupInfoRes.success && groupInfoRes.data && groupInfoRes.data.members ? groupInfoRes.data.members : []
-            };
-          })
-        );
-        setStandaloneGroups(groupsWithMembers);
-      }
+
+      const all_groups_res = await api_client.getAllCommunityGroups();
+      console.log("all_groups_res ->", all_groups_res)
+      setStandaloneGroups(all_groups_res.data as StandaloneGroup[])
 
       if (usersRes.success && usersRes.data) {
         setUsers(usersRes.data.users);
@@ -207,16 +198,16 @@ export default function ManageGroups() {
                   >
                     Edit Community
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCommunity(community);
-                      setShowCreateGroup(true);
-                    }}
-                  >
-                    Add Group
-                  </Button>
+                  {/* <Button */}
+                  {/*   variant="outline" */}
+                  {/*   size="sm" */}
+                  {/*   onClick={() => { */}
+                  {/*     setSelectedCommunity(community); */}
+                  {/*     setShowCreateGroup(true); */}
+                  {/*   }} */}
+                  {/* > */}
+                  {/*   Add Group */}
+                  {/* </Button> */}
                   <Button
                     variant="destructive"
                     size="sm"

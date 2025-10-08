@@ -34,7 +34,7 @@ export default function CommunityEditDialog({ isOpen, onClose, community, onSave
   const fetchAvailableGroups = async () => {
     try {
       setGroupsLoading(true);
-      const response = await api_client.getAvailableGroups();
+      const response = await api_client.getAllCommunityGroups();
       if (response.success && response.data) {
         setAvailableGroups(response.data);
       }

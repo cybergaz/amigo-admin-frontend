@@ -278,8 +278,8 @@ class ApiClient {
     });
   }
 
-  async getAvailableGroups(): Promise<ApiResponse<CommunityGroup[]>> {
-    return this.makeRequest<CommunityGroup[]>('/community/available-groups');
+  async getAllCommunityGroups(): Promise<ApiResponse<CommunityGroup[]>> {
+    return this.makeRequest<CommunityGroup[]>('/community/all-groups');
   }
 
   // Standalone Groups APIs
