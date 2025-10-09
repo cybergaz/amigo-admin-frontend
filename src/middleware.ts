@@ -9,7 +9,6 @@ export const UNPROTECTED_ROUTES = [
   "/login",
 ]
 
-
 export async function middleware(request: NextRequest) {
   try {
     const { pathname } = request.nextUrl;
@@ -19,7 +18,7 @@ export async function middleware(request: NextRequest) {
     const is_auth = await isAuthenticated(request);
 
     // Try to extract role from token
-    const token = request.cookies.get("access_token")?.value;
+    const token = request.cookies.get("refresh_token")?.value;
 
     let userRole: RoleType | null = null;
 

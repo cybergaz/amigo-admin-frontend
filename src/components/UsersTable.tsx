@@ -31,7 +31,8 @@ import {
   RefreshCw,
   Settings,
   Eye,
-  Search
+  Search,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn, formatString } from '@/lib/utils';
@@ -57,7 +58,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
     currentPage: 1,
     totalPages: 1,
     totalCount: 0,
-    limit: 10,
+    limit: 20,
     hasNextPage: false,
     hasPrevPage: false,
   });
@@ -66,15 +67,17 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [locationInfo, setLocationInfo] = useState<LocationInfo | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchUsers = async (page: number = 1, search?: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await api_client.getUsers(page, 10, search);
+      const response = await api_client.getUsers(page, 20, search);
 
       if (response.success && response.data) {
         setUsers(response.data.users);
@@ -159,6 +162,32 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
   const handleRoleEdit = (user: UserType) => {
     setSelectedUser(user);
     setRoleDialogOpen(true);
+  };
+
+  const handleDeleteClick = (user: UserType) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setDeleting(true);
+      const response = await api_client.deleteUser(selectedUser.id);
+
+      if (response.success) {
+        toast.success(`User "${selectedUser.name}" has been permanently deleted`);
+        setDeleteDialogOpen(false);
+        fetchUsers(pagination.currentPage, searchTerm);
+      } else {
+        toast.error(response.message || 'Failed to delete user');
+      }
+    } catch (error) {
+      toast.error('Failed to delete user');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const updateUserRole = async (role: string) => {
@@ -370,7 +399,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                         <span>View</span>
                       </Button>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className='flex gap-2'>
                       <Button
                         variant="outline"
                         size="sm"
@@ -378,7 +407,14 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                         className="flex items-center space-x-1"
                       >
                         <Settings className="h-4 w-4" />
-                        <span>Edit Role</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteClick(user)}
+                        className="flex items-center space-x-1 bg-red-500 hover:bg-red-600 border-red-500 hover:border-red-600"
+                      >
+                        <Trash2 className="h-4 w-4 text-white" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -565,6 +601,99 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
           <DialogFooter>
             <Button variant="outline" onClick={() => setRoleDialogOpen(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              <span>PERMANENT DELETE WARNING</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Extreme Warning Section */}
+            <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4">
+              <h3 className="font-bold text-red-700 mb-2 text-lg">⚠️ CRITICAL ACTION</h3>
+              <p className="text-red-700 font-semibold mb-2">
+                This action is PERMANENT and IRREVERSIBLE!
+              </p>
+              <ul className="list-disc list-inside text-red-600 text-sm space-y-1">
+                <li>User will be completely removed from the database</li>
+                <li>All user data will be permanently deleted</li>
+                <li>This action CANNOT be undone</li>
+                <li>No recovery option will be available</li>
+              </ul>
+            </div>
+
+            {/* User Info Section */}
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <h3 className="font-semibold mb-3">User to be deleted:</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-medium">Name:</span>
+                  <span className="font-bold">{selectedUser?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Phone:</span>
+                  <span>{selectedUser?.phone || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Email:</span>
+                  <span>{selectedUser?.email || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Role:</span>
+                  <Badge variant={getRoleBadgeVariant(selectedUser?.role || '')}>
+                    {formatString(selectedUser?.role)}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">User ID:</span>
+                  <span className="font-mono">{selectedUser?.id}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Final Warning */}
+            <div className="bg-yellow-50 border border-yellow-400 rounded-lg p-3">
+              <p className="text-yellow-800 text-sm font-medium text-center">
+                🛑 Please confirm you understand this action is permanent and cannot be reversed
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleting}
+              className="w-full sm:w-auto"
+            >
+              Cancel (Safe Option)
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={deleting}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 font-bold"
+            >
+              {deleting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Yes, Permanently Delete User
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

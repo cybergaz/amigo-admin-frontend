@@ -7,23 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { api_client } from "@/lib/api-client";
 import { Eye, Users, MessageSquare, Clock } from "lucide-react";
 
-interface ChatViewerDialogProps {
+export interface ChatViewerDialogProps {
   conversationId: number;
   conversationTitle: string;
   conversationType: "group" | "dm" | "community_group";
+  members?: any[];
 }
 
 export function ChatViewerDialog({
   conversationId,
   conversationTitle,
-  conversationType
+  conversationType,
+  members = []
 }: ChatViewerDialogProps) {
   const [open, setOpen] = useState(false);
   const [groupDetails, setGroupDetails] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open && conversationType === "group") {
+    if (open && (conversationType === "group" || conversationType === "community_group")) {
       loadGroupDetails();
     }
   }, [open]);
@@ -51,7 +53,7 @@ export function ChatViewerDialog({
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="flex-1">
           <Eye className="h-4 w-4 mr-2" />
-          View Chat
+          View Details
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
@@ -61,7 +63,7 @@ export function ChatViewerDialog({
             Chat Details - {conversationTitle}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {loading ? (
             <div className="flex items-center justify-center py-8">
@@ -75,13 +77,12 @@ export function ChatViewerDialog({
               {/* Chat Overview */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    conversationType === "group" ? "bg-blue-500" : 
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${conversationType === "group" ? "bg-blue-500" :
                     conversationType === "dm" ? "bg-purple-500" : "bg-green-500"
-                  }`}>
+                    }`}>
                     <span className="text-white font-semibold">
-                      {conversationType === "group" ? "G" : 
-                       conversationType === "dm" ? "D" : "C"}
+                      {conversationType === "group" ? "G" :
+                        conversationType === "dm" ? "D" : "C"}
                     </span>
                   </div>
                   <div>
@@ -101,8 +102,8 @@ export function ChatViewerDialog({
                     <div className="p-3 bg-green-50 rounded-lg">
                       <p className="text-sm text-green-700 font-medium">Last Activity</p>
                       <p className="text-green-900">
-                        {groupDetails.group.last_message_at ? 
-                          formatDate(groupDetails.group.last_message_at) : 
+                        {groupDetails.group.last_message_at ?
+                          formatDate(groupDetails.group.last_message_at) :
                           "No activity"
                         }
                       </p>
@@ -110,38 +111,6 @@ export function ChatViewerDialog({
                   </div>
                 )}
               </div>
-
-              {/* Members Section */}
-              {groupDetails?.members && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Users className="h-4 w-4" />
-                    <h4 className="font-medium">Members ({groupDetails.members.length})</h4>
-                  </div>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {groupDetails.members.map((member: any) => (
-                      <div key={member.userId} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-medium">
-                              {member.userName?.charAt(0) || "U"}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium">{member.userName || `User ${member.userId}`}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Joined {formatDate(member.joinedAt)}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge variant="secondary">
-                          {member.role || "member"}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Chat Info */}
               <div>
@@ -167,17 +136,56 @@ export function ChatViewerDialog({
                 </div>
               </div>
 
+              {/* Members Section */}
+              {(conversationType === "group" || conversationType === "community_group") && members.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Users className="h-4 w-4" />
+                    <h4 className="font-medium">Members ({members.length})</h4>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {members.map((member: any) => {
+                      const userId = member.userId || member.id;
+                      const userName = member.userName || member.name;
+                      const userEmail = member.userEmail || member.email;
+                      const joinedAt = member.joinedAt || member.joined_at;
+
+                      return (
+                        <div key={userId} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium">
+                                {userName?.charAt(0) || "U"}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-medium">{userName || `User ${userId}`}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {userEmail || (joinedAt ? `Joined ${formatDate(joinedAt)}` : 'No info')}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="secondary">
+                            {member.role || "member"}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
-              <div className="flex gap-2 pt-4 border-t">
-                <Button variant="outline" className="flex-1">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  View Messages
-                </Button>
-                <Button variant="outline" className="flex-1">
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Members
-                </Button>
-              </div>
+              {/* <div className="flex gap-2 pt-4 border-t"> */}
+              {/*   <Button variant="outline" className="flex-1"> */}
+              {/*     <MessageSquare className="h-4 w-4 mr-2" /> */}
+              {/*     View Messages */}
+              {/*   </Button> */}
+              {/*   <Button variant="outline" className="flex-1"> */}
+              {/*     <Users className="h-4 w-4 mr-2" /> */}
+              {/*     Manage Members */}
+              {/*   </Button> */}
+              {/* </div> */}
             </>
           )}
         </div>

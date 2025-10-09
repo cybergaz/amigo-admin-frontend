@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api_client } from "@/lib/api-client";
 import { MessageSquare, Eye, ArrowLeft, ArrowRight, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 interface Message {
   id: number;
@@ -42,6 +43,8 @@ export function MessageViewerDialog({
   const [totalPages, setTotalPages] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -111,18 +114,21 @@ export function MessageViewerDialog({
     loadMessages();
   };
 
-  const handlePermanentDelete = async (messageId: number) => {
-    if (!confirm("Are you sure you want to permanently delete this message? This action cannot be undone.")) {
-      return;
-    }
+  const handleDeleteClick = (message: Message) => {
+    setMessageToDelete(message);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!messageToDelete) return;
 
     try {
-      setDeletingMessageId(messageId);
-      await api_client.permanentlyDeleteMessage(messageId);
-      
+      setDeletingMessageId(messageToDelete.id);
+      await api_client.permanentlyDeleteMessage(messageToDelete.id);
+
       // Remove message from local state
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-      
+      setMessages(prev => prev.filter(msg => msg.id !== messageToDelete.id));
+
       // Update pagination
       if (pagination) {
         setPagination((prev: any) => ({
@@ -130,12 +136,21 @@ export function MessageViewerDialog({
           totalCount: prev.totalCount - 1
         }));
       }
+
+      toast.success("Message deleted successfully");
+      setShowDeleteConfirm(false);
+      setMessageToDelete(null);
     } catch (error) {
       console.error("Error permanently deleting message:", error);
-      alert("Failed to delete message. Please try again.");
+      toast.error("Failed to delete message. Please try again.");
     } finally {
       setDeletingMessageId(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setMessageToDelete(null);
   };
 
   return (
@@ -146,15 +161,15 @@ export function MessageViewerDialog({
           View Messages
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             Messages - {conversationTitle}
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="flex flex-col h-full">
+
+        <div className="flex flex-col h-full overflow-y-scroll">
           {/* Header Controls */}
           <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2">
@@ -213,7 +228,7 @@ export function MessageViewerDialog({
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handlePermanentDelete(message.id)}
+                          onClick={() => handleDeleteClick(message)}
                           disabled={deletingMessageId === message.id}
                           className="h-6 w-6 p-0"
                         >
@@ -226,13 +241,13 @@ export function MessageViewerDialog({
                       )}
                     </div>
                   </div>
-                  
+
                   {message.body && (
                     <div className="mb-3">
                       <p className="text-sm whitespace-pre-wrap">{message.body}</p>
                     </div>
                   )}
-                  
+
                   {message.attachments && (
                     <div className="mb-3">
                       <Badge variant="secondary" className="mb-2">
@@ -243,14 +258,14 @@ export function MessageViewerDialog({
                       </div>
                     </div>
                   )}
-                  
+
                   {message.metadata?.reply_to && (
                     <div className="mb-3 p-2 bg-gray-100 rounded text-sm">
                       <p className="font-medium">Replying to:</p>
                       <p className="text-muted-foreground">{message.metadata.reply_to.body}</p>
                     </div>
                   )}
-                  
+
                   {message.edited_at && (
                     <div className="text-xs text-muted-foreground">
                       Edited at {formatMessageTime(message.edited_at)}
@@ -264,23 +279,23 @@ export function MessageViewerDialog({
           {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1 || loading}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Previous
               </Button>
-              
+
               <span className="text-sm text-muted-foreground">
                 Page {currentPage} of {totalPages}
               </span>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
+
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages || loading}
               >
@@ -291,6 +306,61 @@ export function MessageViewerDialog({
           )}
         </div>
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Permanently Delete Message
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Are you sure you want to permanently delete this message? This action cannot be undone.
+              {messageToDelete && (
+                <div className="mt-3 p-3 bg-muted rounded-lg border-l-4 border-destructive">
+                  <p className="text-sm font-medium text-foreground">Message Preview:</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    From: {messageToDelete.senderName || `User ${messageToDelete.sender_id}`}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatMessageTime(messageToDelete.created_at)}
+                  </p>
+                  {messageToDelete.body && (
+                    <p className="text-sm text-foreground mt-2 font-mono bg-background p-2 rounded border max-h-20 overflow-y-auto">
+                      {messageToDelete.body.length > 100 
+                        ? `${messageToDelete.body.substring(0, 100)}...` 
+                        : messageToDelete.body}
+                    </p>
+                  )}
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={handleCancelDelete}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirmDelete}
+              disabled={deletingMessageId === messageToDelete?.id}
+            >
+              {deletingMessageId === messageToDelete?.id ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Permanently
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import CommunityEditDialog from '@/components/community-management/CommunityEditDialog';
 import GroupEditDialog from '@/components/group-management/GroupEditDialog';
 import GroupEditDetailsDialog from '@/components/group-management/GroupEditDetailsDialog';
+import GroupAddToCommunitiesDialog from '@/components/group-management/GroupAddToCommunitiesDialog';
 import BouncingBalls from '@/components/ui/bouncing-balls';
 
 interface CommunityWithGroups extends Community {
@@ -27,6 +28,8 @@ export default function ManageGroups() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [isCreatingCommunity, setIsCreatingCommunity] = useState(false);
 
   // Dialog states
   const [showCreateCommunity, setShowCreateCommunity] = useState(false);
@@ -36,6 +39,7 @@ export default function ManageGroups() {
   const [showEditGroupDetails, setShowEditGroupDetails] = useState(false);
   const [showEditGroupMembers, setShowEditGroupMembers] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAddToCommunities, setShowAddToCommunities] = useState(false);
 
   // Selected items
   const [selectedCommunity, setSelectedCommunity] = useState<CommunityWithGroups | null>(null);
@@ -78,9 +82,10 @@ export default function ManageGroups() {
       }
 
 
+      // fetch and Set standalone groups
       const all_groups_res = await api_client.getAllCommunityGroups();
-      console.log("all_groups_res ->", all_groups_res)
-      setStandaloneGroups(all_groups_res.data as StandaloneGroup[])
+      if (all_groups_res.success && all_groups_res.data)
+        setStandaloneGroups(all_groups_res.data as StandaloneGroup[])
 
       if (usersRes.success && usersRes.data) {
         setUsers(usersRes.data.users);
@@ -94,7 +99,10 @@ export default function ManageGroups() {
   };
 
   const handleCreateCommunity = async () => {
+    if (isCreatingCommunity) return; // Prevent duplicate submissions
+    
     try {
+      setIsCreatingCommunity(true);
       const response = await api_client.createCommunity(communityName);
       if (response.success) {
         toast.success('Community created successfully');
@@ -106,39 +114,36 @@ export default function ManageGroups() {
       }
     } catch (error) {
       toast.error('Failed to create community');
+    } finally {
+      setIsCreatingCommunity(false);
     }
   };
 
   const handleCreateGroup = async () => {
+    if (isCreatingGroup) return; // Prevent duplicate submissions
+    
     try {
-      let response;
-
-      if (selectedCommunity) {
-        // Create community group
-        response = await api_client.createCommunityGroup(selectedCommunity.id, {
-          title: groupTitle,
-          active_time_slots: [{ start_time: groupStartTime, end_time: groupEndTime }],
-          member_ids: selectedMembers
-        });
-      } else {
-        // Create standalone group
-        response = await api_client.createGroup(groupTitle, selectedMembers);
-      }
+      setIsCreatingGroup(true);
+      // Create community group
+      const response = await api_client.createStandaloneGroup({
+        title: groupTitle,
+        active_time_slots: [{ start_time: groupStartTime, end_time: groupEndTime }],
+      });
 
       if (response.success) {
-        toast.success('Group created successfully');
+        toast.success(response.message);
         setShowCreateGroup(false);
         setGroupTitle('');
         setGroupStartTime('13:00');
         setGroupEndTime('15:00');
-        setSelectedMembers([]);
-        setSelectedCommunity(null);
         fetchData();
       } else {
         toast.error(response.message || 'Failed to create group');
       }
     } catch (error) {
       toast.error('Failed to create group');
+    } finally {
+      setIsCreatingGroup(false);
     }
   };
 
@@ -250,16 +255,16 @@ export default function ManageGroups() {
                             >
                               Edit Members
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedGroup(group);
-                                setShowEditGroupDetails(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
+                            {/* <Button */}
+                            {/*   variant="outline" */}
+                            {/*   size="sm" */}
+                            {/*   onClick={() => { */}
+                            {/*     setSelectedGroup(group); */}
+                            {/*     setShowEditGroupDetails(true); */}
+                            {/*   }} */}
+                            {/* > */}
+                            {/*   Edit */}
+                            {/* </Button> */}
                             <Button
                               variant="destructive"
                               size="sm"
@@ -314,6 +319,16 @@ export default function ManageGroups() {
                     }}
                   >
                     Edit
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedGroup(group);
+                      setShowAddToCommunities(true);
+                    }}
+                  >
+                    Add to Community
                   </Button>
                   <Button
                     variant="destructive"
@@ -395,11 +410,11 @@ export default function ManageGroups() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateCommunity(false)}>
+            <Button variant="outline" onClick={() => setShowCreateCommunity(false)} disabled={isCreatingCommunity}>
               Cancel
             </Button>
-            <Button onClick={handleCreateCommunity} disabled={!communityName.trim()}>
-              Create Community
+            <Button onClick={handleCreateCommunity} disabled={!communityName.trim() || isCreatingCommunity}>
+              {isCreatingCommunity ? 'Creating...' : 'Create Community'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -448,35 +463,33 @@ export default function ManageGroups() {
                 placeholder="Enter group title"
               />
             </div>
-            {selectedCommunity && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className='flex flex-col gap-2'>
-                  <Label htmlFor="start-time">Start Time</Label>
-                  <Input
-                    id="start-time"
-                    type="time"
-                    value={groupStartTime}
-                    onChange={(e) => setGroupStartTime(e.target.value)}
-                  />
-                </div>
-                <div className='flex flex-col gap-2'>
-                  <Label htmlFor="end-time">End Time</Label>
-                  <Input
-                    id="end-time"
-                    type="time"
-                    value={groupEndTime}
-                    onChange={(e) => setGroupEndTime(e.target.value)}
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className='flex flex-col gap-2'>
+                <Label htmlFor="start-time">Start Time</Label>
+                <Input
+                  id="start-time"
+                  type="time"
+                  value={groupStartTime}
+                  onChange={(e) => setGroupStartTime(e.target.value)}
+                />
               </div>
-            )}
+              <div className='flex flex-col gap-2'>
+                <Label htmlFor="end-time">End Time</Label>
+                <Input
+                  id="end-time"
+                  type="time"
+                  value={groupEndTime}
+                  onChange={(e) => setGroupEndTime(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateGroup(false)}>
+            <Button variant="outline" onClick={() => setShowCreateGroup(false)} disabled={isCreatingGroup}>
               Cancel
             </Button>
-            <Button onClick={handleCreateGroup} disabled={!groupTitle.trim()}>
-              Create Group
+            <Button onClick={handleCreateGroup} disabled={!groupTitle.trim() || isCreatingGroup}>
+              {isCreatingGroup ? 'Creating...' : 'Create Group'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -501,6 +514,14 @@ export default function ManageGroups() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add to Communities Dialog */}
+      <GroupAddToCommunitiesDialog
+        isOpen={showAddToCommunities}
+        onClose={() => setShowAddToCommunities(false)}
+        group={selectedGroup}
+        onSave={fetchData}
+      />
 
     </div>
   );

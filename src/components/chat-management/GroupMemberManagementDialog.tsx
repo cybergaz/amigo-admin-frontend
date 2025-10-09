@@ -4,16 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { api_client, type UserType, type CommunityGroup, type StandaloneGroup } from '@/lib/api-client';
+import { api_client, type UserType } from '@/lib/api-client';
 import { toast } from 'sonner';
 import BouncingBalls from '../ui/bouncing-balls';
 
-interface GroupEditDialogProps {
+interface GroupMemberManagementDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  group: CommunityGroup | StandaloneGroup | null;
+  conversationId: number;
+  groupTitle: string;
   onSave: () => void;
 }
 
@@ -29,7 +29,13 @@ interface PaginatedUsers {
   };
 }
 
-export default function GroupEditDialog({ isOpen, onClose, group, onSave }: GroupEditDialogProps) {
+export function GroupMemberManagementDialog({ 
+  isOpen, 
+  onClose, 
+  conversationId, 
+  groupTitle, 
+  onSave 
+}: GroupMemberManagementDialogProps) {
   const [currentMembers, setCurrentMembers] = useState<UserType[]>([]);
   const [availableUsers, setAvailableUsers] = useState<UserType[]>([]);
   const [selectedUsersToAdd, setSelectedUsersToAdd] = useState<number[]>([]);
@@ -45,7 +51,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
   const [usersLoading, setUsersLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && group) {
+    if (isOpen) {
       setSelectedUsersToAdd([]);
       setSelectedUsersToRemove([]);
       setCurrentPage(1);
@@ -53,7 +59,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
       fetchGroupMembers();
       fetchAvailableUsers(1, '');
     }
-  }, [isOpen, group]);
+  }, [isOpen, conversationId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -62,25 +68,20 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
   }, [currentPage, searchTerm, isOpen]);
 
   const fetchGroupMembers = async () => {
-    if (!group) return;
-
     try {
       setMembersLoading(true);
-      const response = await api_client.getChatManagementGroupDetails(group.id);
-      console.log('Group info response:', response); // Debug log
+      const response = await api_client.getChatManagementGroupDetails(conversationId);
+      console.log('Group info response:', response);
 
       if (response.success && response.data) {
-        // Handle different response structures
         let members = [];
 
-        if (response.data && Array.isArray(response.data)) {
-          // If members is an array of objects with user property
+        if (Array.isArray(response.data)) {
           members = response.data
             .map((member: any) => {
               if (member.user) {
                 return member.user;
               } else if (member.userId && member.userName) {
-                // Handle direct member object structure
                 return {
                   id: member.userId,
                   name: member.userName,
@@ -90,11 +91,6 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
               }
               return null;
             })
-            .filter(Boolean);
-        } else if (response.data.group && response.data.group.members) {
-          // Handle nested structure
-          members = response.data.group.members
-            .map((member: any) => member.user)
             .filter(Boolean);
         }
 
@@ -142,11 +138,11 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
   };
 
   const handleAddMembers = async () => {
-    if (!group || selectedUsersToAdd.length === 0) return;
+    if (selectedUsersToAdd.length === 0) return;
 
     try {
       setLoading(true);
-      const response = await api_client.addGroupMembers(group.id, selectedUsersToAdd);
+      const response = await api_client.addMemberToChat(conversationId, selectedUsersToAdd);
 
       if (response.success) {
         toast.success(`Added ${selectedUsersToAdd.length} member(s) successfully`);
@@ -165,14 +161,14 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
   };
 
   const handleRemoveMembers = async () => {
-    if (!group || selectedUsersToRemove.length === 0) return;
+    if (selectedUsersToRemove.length === 0) return;
 
     try {
       setLoading(true);
 
       // Remove members one by one
       for (const userId of selectedUsersToRemove) {
-        await api_client.removeGroupMember(group.id, userId);
+        await api_client.removeMemberFromChat(conversationId, userId);
       }
 
       toast.success(`Removed ${selectedUsersToRemove.length} member(s) successfully`);
@@ -188,15 +184,15 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
   };
 
   const handleMakeChanges = async () => {
-    if (!group || (selectedUsersToAdd.length === 0 && selectedUsersToRemove.length === 0)) return;
+    if (selectedUsersToAdd.length === 0 && selectedUsersToRemove.length === 0) return;
 
     try {
-      await handleAddMembers()
-      await handleRemoveMembers()
+      await handleAddMembers();
+      await handleRemoveMembers();
     } catch (error) {
       toast.error('Failed to make changes');
     }
-  }
+  };
 
   const handleUserToggle = (userId: number, action: 'add' | 'remove') => {
     if (action === 'add') {
@@ -216,7 +212,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -227,9 +223,9 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-screen min-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="pb-4">
-          <DialogTitle className="text-xl">Edit Group: {group?.title}</DialogTitle>
+          <DialogTitle className="text-xl">Manage Members: {groupTitle}</DialogTitle>
           <DialogDescription className="text-base">
-            Manage members of this group. Add or remove users as needed.
+            Add or remove members from this group.
           </DialogDescription>
         </DialogHeader>
 
@@ -485,7 +481,6 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
         )}
 
         <DialogFooter className="pt-4">
-
           {
             selectedUsersToRemove.length > 0 && selectedUsersToAdd.length > 0 &&
             <Button variant="outline" onClick={handleMakeChanges} disabled={loading} size="lg" className='bg-green-500 text-white hover:bg-green-600 hover:text-white cursor-pointer font-semibold'>
@@ -500,3 +495,4 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
     </Dialog>
   );
 }
+

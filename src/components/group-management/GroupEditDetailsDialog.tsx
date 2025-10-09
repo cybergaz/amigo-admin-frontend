@@ -29,10 +29,10 @@ export default function GroupEditDetailsDialog({ isOpen, onClose, group, onSave 
   useEffect(() => {
     if (isOpen && group) {
       setGroupName(group.title || '');
-      
-      if (isCommunityGroup(group) && group.active_time_slots && group.active_time_slots.length > 0) {
+
+      if (group.metadata.active_time_slots) {
         // Use the first time slot if available
-        const firstSlot = group.active_time_slots[0];
+        const firstSlot = group.metadata.active_time_slots[0];
         setStartTime(firstSlot.start_time || '13:00');
         setEndTime(firstSlot.end_time || '15:00');
       } else {
@@ -51,18 +51,11 @@ export default function GroupEditDetailsDialog({ isOpen, onClose, group, onSave 
 
     try {
       setLoading(true);
-      let response;
 
-      if (isCommunityGroup(group)) {
-        // Update community group with title and time slots
-        response = await api_client.updateCommunityGroup(group.id, {
-          title: groupName,
-          active_time_slots: [{ start_time: startTime, end_time: endTime }]
-        });
-      } else {
-        // Update standalone group title only
-        response = await api_client.updateGroupTitle(group.id, groupName);
-      }
+      const response = await api_client.updateCommunityGroup(group.id, {
+        title: groupName,
+        active_time_slots: [{ start_time: startTime, end_time: endTime }]
+      });
 
       if (response.success) {
         toast.success('Group updated successfully');
@@ -107,30 +100,30 @@ export default function GroupEditDetailsDialog({ isOpen, onClose, group, onSave 
             />
           </div>
 
-          {isCommunityGroup(group) && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start-time">Start Time</Label>
-                <Input
-                  id="start-time"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="end-time">End Time</Label>
-                <Input
-                  id="end-time"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
+          {/* {isCommunityGroup(group) && ( */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="start-time">Start Time</Label>
+              <Input
+                id="start-time"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                disabled={loading}
+              />
             </div>
-          )}
+            <div className="space-y-2">
+              <Label htmlFor="end-time">End Time</Label>
+              <Input
+                id="end-time"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+          </div>
+          {/* )} */}
         </div>
 
         <DialogFooter>

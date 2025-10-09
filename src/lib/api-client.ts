@@ -1,3 +1,4 @@
+import { UserInfo } from "@/store/user.store";
 import { ApiResponse } from "@/types/common.types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -121,7 +122,7 @@ const get_token_from_cookies = () => {
 
 class ApiClient {
 
-  token = get_token_from_cookies();
+  // token = get_token_from_cookies();
 
   async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
 
@@ -130,7 +131,7 @@ class ApiClient {
     const defaultOptions: RequestInit = {
       headers: {
         "Content-Type": "application/json",
-        "Authorization": this.token ? `Bearer ${this.token}` : "",
+        // "Authorization": this.token ? `Bearer ${this.token}` : "",
         ...options.headers,
       },
       credentials: "include",
@@ -144,6 +145,25 @@ class ApiClient {
       const data = await response.json();
 
       console.log(`📥 API Response: ${options.method || "GET"} -> ${url}`, { api_res_status: response.status, data, });
+
+      if (!response.ok && response.status === 401) {
+        console.error(`❌ API Error: ${options.method || "GET"} ${url}`, data);
+        // trying to get access token again from refresh token
+        const refresh_response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          credentials: "include",
+        });
+
+        if (refresh_response.ok) {
+          const refreshData = await refresh_response.json();
+          console.log('🔄 Token refreshed successfully:', refreshData);
+
+          // Reload the page to apply the new token
+          if (typeof window !== 'undefined') {
+            window.location.reload();
+          }
+        }
+      }
 
       return data;
     } catch (error: any) {
@@ -176,6 +196,12 @@ class ApiClient {
     return this.makeRequest<{ id: number; call_access: boolean }>('/admin/update-user-call-access', {
       method: 'PUT',
       body: JSON.stringify({ id, call_access }),
+    });
+  }
+
+  async deleteUser(id: number): Promise<ApiResponse<{ id: number; name: string }>> {
+    return this.makeRequest<{ id: number; name: string }>(`/admin/delete-user/${id}`, {
+      method: 'DELETE',
     });
   }
 
@@ -282,6 +308,13 @@ class ApiClient {
     return this.makeRequest<CommunityGroup[]>('/community/all-groups');
   }
 
+  async addGroupToCommunities(groupId: number, communityIds: number[]): Promise<ApiResponse<{ added_to_communities: number; errors?: string[] }>> {
+    return this.makeRequest<{ added_to_communities: number; errors?: string[] }>('/community/add-group-to-communities', {
+      method: 'POST',
+      body: JSON.stringify({ group_id: groupId, community_ids: communityIds }),
+    });
+  }
+
   // Standalone Groups APIs
   async getChatList(type?: string): Promise<ApiResponse<StandaloneGroup[]>> {
     const typeParam = type ? `?type=${type}` : '';
@@ -292,6 +325,17 @@ class ApiClient {
     return this.makeRequest<StandaloneGroup>('/chat/create-group', {
       method: 'POST',
       body: JSON.stringify({ title, member_ids }),
+    });
+  }
+
+  async createStandaloneGroup(data: {
+    title: string;
+    active_time_slots: Array<{ start_time: string; end_time: string }>;
+    timezone?: string;
+  }): Promise<ApiResponse<CommunityGroup>> {
+    return this.makeRequest<CommunityGroup>(`/community/create-standalone-group`, {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 
@@ -343,7 +387,7 @@ class ApiClient {
     return this.makeRequest(`/admin/chat-management/groups${params}`);
   }
 
-  async getChatManagementDirectChats(page: number = 1, limit: number = 10): Promise<ApiResponse<{
+  async getChatManagementDirectChats(page: number = 1, limit: number = 10, search: string = ""): Promise<ApiResponse<{
     chats: any[];
     pagination: {
       currentPage: number;
@@ -354,7 +398,8 @@ class ApiClient {
       hasPreviousPage: boolean;
     };
   }>> {
-    return this.makeRequest(`/admin/chat-management/direct-chats?page=${page}&limit=${limit}`);
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    return this.makeRequest(`/admin/chat-management/direct-chats?page=${page}&limit=${limit}${searchParam}`);
   }
 
   async getChatManagementGroupDetails(conversationId: number): Promise<ApiResponse<{
@@ -403,6 +448,12 @@ class ApiClient {
 
   async permanentlyDeleteMessage(messageId: number): Promise<ApiResponse<any>> {
     return this.makeRequest(`/admin/chat-management/permanently-delete-message/${messageId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async softDeleteDm(conversationId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest(`/admin/chat-management/soft-delete-dm/${conversationId}`, {
       method: 'DELETE'
     });
   }

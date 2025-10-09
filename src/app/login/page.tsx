@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { loginWithEmail } from "@/lib/auth-api";
 import { toast } from "sonner";
 import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
+import { api_client } from "@/lib/api-client";
+import { user_store } from "@/store/user.store";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,15 +18,18 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const fetch_user = user_store((state) => state.fetchUser);
+  const user_info = user_store((state) => state.user);
 
   // Check if user is already authenticated and redirect to dashboard
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       // Check if access_token cookie exists (client-side check)
-      const cookies = document.cookie.split(';');
-      const accessToken = cookies.find(cookie => cookie.trim().startsWith('access_token='));
+      // const cookies = document.cookie.split(';');
+      // const accessToken = cookies.find(cookie => cookie.trim().startsWith('access_token='));
+      await fetch_user();
 
-      if (accessToken) {
+      if (user_info) {
         // User appears to be logged in, redirect to dashboard
         router.push("/dashboard");
       }
@@ -46,8 +51,8 @@ export default function LoginPage() {
     try {
       const result = await loginWithEmail({ email, password });
       if (result.success) {
-        document.cookie = `access_token=${result.data?.access_token}; path=/; max-age=3600;`;
-        document.cookie = `refresh_token=${result.data?.access_token}; path=/; max-age=3600;`;
+        // document.cookie = `access_token=${result.data?.access_token}; path=/; max-age=3600;`;
+        // document.cookie = `refresh_token=${result.data?.access_token}; path=/; max-age=3600;`;
 
         toast.success("Login successful! Welcome to Amigo Admin Panel");
         router.push("/dashboard"); // Redirect to dashboard after successful login

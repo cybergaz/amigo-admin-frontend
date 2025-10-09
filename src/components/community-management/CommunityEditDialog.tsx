@@ -164,7 +164,7 @@ export default function CommunityEditDialog({ isOpen, onClose, community, onSave
               <h4 className="font-medium mb-2">Selected Groups ({selectedGroups.length}):</h4>
               <div className="flex flex-wrap gap-2">
                 {selectedGroups.map(groupId => (
-                  <Badge key={groupId} variant="secondary">
+                  <Badge key={groupId} variant="secondary" className='bg-white'>
                     {getGroupTitle(groupId)}
                   </Badge>
                 ))}

@@ -184,8 +184,8 @@ export default function AdminManagement() {
             <DialogHeader>
               <DialogTitle>Create New Admin</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
+            <div className="space-y-4 mt-4">
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="email">Email Address *</Label>
                 <Input
                   id="email"
@@ -195,7 +195,7 @@ export default function AdminManagement() {
                   placeholder="admin@example.com"
                 />
               </div>
-              <div>
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="password">Password *</Label>
                 <div className="relative">
                   <Input
@@ -216,12 +216,12 @@ export default function AdminManagement() {
                   </Button>
                 </div>
               </div>
-              <div>
-                <Label>Role</Label>
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <Badge variant="secondary">Admin</Badge>
-                </div>
-              </div>
+              {/* <div> */}
+              {/*   <Label>Role</Label> */}
+              {/*   <div className="p-3 bg-gray-50 rounded-md"> */}
+              {/*     <Badge variant="secondary">Admin</Badge> */}
+              {/*   </div> */}
+              {/* </div> */}
               <div>
                 <Label>Permissions *</Label>
                 <div className="space-y-3 mt-2">
@@ -317,16 +317,22 @@ export default function AdminManagement() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={admin.role === "admin" ? "default" : "secondary"}>
-                        {admin.role === "admin" ? "Admin" : "Admin"}
+                        {admin.role === "admin" ? "Admin" : "Sub Admin"}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {admin.permissions?.slice(0, 3).map((permission) => (
-                          <Badge key={permission} variant="outline" className="text-xs">
-                            {AVAILABLE_PERMISSIONS.find(p => p.key === permission)?.label || permission}
+                        {admin.permissions ?
+                          admin.permissions.slice(0, 3).map((permission) => (
+                            <Badge key={permission} variant="outline" className="text-xs">
+                              {AVAILABLE_PERMISSIONS.find(p => p.key === permission)?.label || permission}
+                            </Badge>
+                          ))
+                          :
+                          <Badge variant="outline" className="text-xs">
+                            All Permissions
                           </Badge>
-                        ))}
+                        }
                         {admin.permissions && admin.permissions.length > 3 && (
                           <Badge variant="outline" className="text-xs">
                             +{admin.permissions.length - 3} more
@@ -335,8 +341,8 @@ export default function AdminManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={admin.online_status ? "default" : "destructive"}>
-                        {admin.online_status ? "Active" : "Inactive"}
+                      <Badge variant={admin.online_status || admin.role === "admin" ? "positive" : "destructiveLite"}>
+                        {admin.role === "admin" && "Active" || admin.online_status ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell>

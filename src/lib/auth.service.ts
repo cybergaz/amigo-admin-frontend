@@ -9,7 +9,7 @@ if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
 }
 
 const isAuthenticated = async (request: NextRequest) => {
-  const token = request.cookies.get("access_token")?.value;
+  const token = request.cookies.get("refresh_token")?.value;
   return !!token;
 }
 
@@ -27,8 +27,8 @@ const handle_logout = async (router: AppRouterInstance) => {
 
   try {
 
-    document.cookie = "access_token=; path=/; max-age=0;";
-    document.cookie = "refresh_token=; path=/; max-age=0;";
+    // document.cookie = "access_token=; path=/; max-age=0;";
+    // document.cookie = "refresh_token=; path=/; max-age=0;";
 
     const res = await api_client.makeRequest("/auth/logout")
 
