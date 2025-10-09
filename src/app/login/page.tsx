@@ -24,13 +24,12 @@ export default function LoginPage() {
   // Check if user is already authenticated and redirect to dashboard
   useEffect(() => {
     const checkAuth = async () => {
-      // Check if access_token cookie exists (client-side check)
-      // const cookies = document.cookie.split(';');
-      // const accessToken = cookies.find(cookie => cookie.trim().startsWith('access_token='));
+      // Try to fetch user data (will fail if cookies are invalid/missing)
       await fetch_user();
-
+      
+      // Only redirect if we successfully got user data
+      // This prevents redirecting based on stale localStorage
       if (user_info) {
-        // User appears to be logged in, redirect to dashboard
         router.push("/dashboard");
       }
     };
