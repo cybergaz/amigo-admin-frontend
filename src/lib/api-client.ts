@@ -382,9 +382,25 @@ class ApiClient {
     return this.makeRequest(`/admin/chat-management/stats`);
   }
 
-  async getChatManagementGroups(type?: string): Promise<ApiResponse<any[]>> {
-    const params = type ? `?type=${type}` : '';
-    return this.makeRequest(`/admin/chat-management/groups${params}`);
+  async getChatManagementGroups(type?: string, page: number = 1, limit: number = 20, search: string = "", showDeleted: boolean = false): Promise<ApiResponse<{
+    groups: any[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalCount: number;
+      limit: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  }>> {
+    const params = new URLSearchParams();
+    if (type) params.append('type', type);
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (search) params.append('search', search);
+    params.append('showDeleted', showDeleted.toString());
+
+    return this.makeRequest(`/admin/chat-management/groups?${params.toString()}`);
   }
 
   async getChatManagementDirectChats(page: number = 1, limit: number = 10, search: string = ""): Promise<ApiResponse<{
@@ -452,9 +468,21 @@ class ApiClient {
     });
   }
 
-  async softDeleteDm(conversationId: number): Promise<ApiResponse<any>> {
-    return this.makeRequest(`/admin/chat-management/soft-delete-dm/${conversationId}`, {
+  async permanentlyDeleteChat(conversationId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest(`/admin/chat-management/hard-delete-chat/${conversationId}`, {
       method: 'DELETE'
+    });
+  }
+
+  async softDeleteConversation(conversationId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest(`/admin/chat-management/soft-delete-conversation/${conversationId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async reviveChat(conversationId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest(`/admin/chat-management/revive-chat/${conversationId}`, {
+      method: 'POST'
     });
   }
 

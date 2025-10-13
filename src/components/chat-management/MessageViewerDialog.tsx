@@ -29,12 +29,14 @@ interface MessageViewerDialogProps {
   conversationId: number;
   conversationTitle: string;
   conversationType: "group" | "dm" | "community_group";
+  iconOnly?: boolean;
 }
 
 export function MessageViewerDialog({
   conversationId,
   conversationTitle,
-  conversationType
+  conversationType,
+  iconOnly = false
 }: MessageViewerDialogProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -245,9 +247,9 @@ export function MessageViewerDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="flex-1">
-          <MessageSquare className="h-4 w-4 mr-2" />
-          View Messages
+        <Button variant="outline" size="sm" className={iconOnly ? "px-2" : "flex-1"}>
+          <MessageSquare className={iconOnly ? "h-3 w-3" : "h-4 w-4 mr-2"} />
+          {!iconOnly && "View Messages"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

@@ -20,7 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Loader2
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { MemberManagementDialog } from "@/components/chat-management/MemberManagementDialog";
 import { MessageViewerDialog } from "@/components/chat-management/MessageViewerDialog";
@@ -133,24 +134,86 @@ export default function ManageChats() {
   const [conversationToDelete, setConversationToDelete] = useState<number | null>(null);
   const [dmLoading, setDmLoading] = useState(false);
 
+  // Pagination state for user groups
+  const [userGroupsPage, setUserGroupsPage] = useState(1);
+  const [userGroupsLimit] = useState(20);
+  const [userGroupsPagination, setUserGroupsPagination] = useState<{
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  } | null>(null);
+  const [userGroupsSearchQuery, setUserGroupsSearchQuery] = useState("");
+  const [debouncedUserGroupsSearch, setDebouncedUserGroupsSearch] = useState("");
+  const [userGroupsShowDeleted, setUserGroupsShowDeleted] = useState(false);
+  const [userGroupsLoading, setUserGroupsLoading] = useState(false);
+
+  // Pagination state for community groups
+  const [communityGroupsPage, setCommunityGroupsPage] = useState(1);
+  const [communityGroupsLimit] = useState(20);
+  const [communityGroupsPagination, setCommunityGroupsPagination] = useState<{
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  } | null>(null);
+  const [communityGroupsSearchQuery, setCommunityGroupsSearchQuery] = useState("");
+  const [debouncedCommunityGroupsSearch, setDebouncedCommunityGroupsSearch] = useState("");
+  const [communityGroupsShowDeleted, setCommunityGroupsShowDeleted] = useState(false);
+  const [communityGroupsLoading, setCommunityGroupsLoading] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
 
-  // Debounced search effect - only updates the debounced value after user stops typing
+  // Debounced search effect for DM - only updates the debounced value after user stops typing
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       setDebouncedSearchQuery(dmSearchQuery);
       setDmPage(1); // Reset to page 1 when search changes
-    }, 700); // 500ms debounce
+    }, 700);
 
     return () => clearTimeout(debounceTimer);
   }, [dmSearchQuery]);
+
+  // Debounced search effect for user groups
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      setDebouncedUserGroupsSearch(userGroupsSearchQuery);
+      setUserGroupsPage(1); // Reset to page 1 when search changes
+    }, 700);
+
+    return () => clearTimeout(debounceTimer);
+  }, [userGroupsSearchQuery]);
+
+  // Debounced search effect for community groups
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      setDebouncedCommunityGroupsSearch(communityGroupsSearchQuery);
+      setCommunityGroupsPage(1); // Reset to page 1 when search changes
+    }, 700);
+
+    return () => clearTimeout(debounceTimer);
+  }, [communityGroupsSearchQuery]);
 
   // Load direct chats when page or debounced search changes
   useEffect(() => {
     loadDirectChats();
   }, [dmPage, debouncedSearchQuery]);
+
+  // Load user groups when page, search, or filter changes
+  useEffect(() => {
+    loadUserGroups();
+  }, [userGroupsPage, debouncedUserGroupsSearch, userGroupsShowDeleted]);
+
+  // Load community groups when page, search, or filter changes
+  useEffect(() => {
+    loadCommunityGroups();
+  }, [communityGroupsPage, debouncedCommunityGroupsSearch, communityGroupsShowDeleted]);
 
   const loadData = async () => {
     try {
@@ -162,23 +225,36 @@ export default function ManageChats() {
         setStats(statsResponse.data);
       }
 
-      // Load all groups
-      const groupsResponse = await api_client.getChatManagementGroups("group");
-      if (groupsResponse.success && groupsResponse.data) {
-        const groups = groupsResponse.data;
-        // Filter groups based on creator - admin created vs user created
-        const adminGroupsData = groups.filter((group: any) =>
-          group.createrId === 1 // Assuming admin user ID is 1 - you might need to get this from auth
-        );
-        const userGroupsData = groups.filter((group: any) =>
-          group.createrId !== 1
-        );
+      // Load communities
+      const communitiesResponse = await api_client.getChatManagementCommunities();
+      if (communitiesResponse.success && communitiesResponse.data) {
+        setCommunities(communitiesResponse.data);
+      }
 
-        setAdminGroups(adminGroupsData);
-        setUserGroups(userGroupsData);
+    } catch (error) {
+      console.error("Error loading chat management data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUserGroups = async () => {
+    try {
+      setUserGroupsLoading(true);
+      const response = await api_client.getChatManagementGroups(
+        "group",
+        userGroupsPage,
+        userGroupsLimit,
+        debouncedUserGroupsSearch,
+        userGroupsShowDeleted
+      );
+
+      if (response.success && response.data) {
+        setUserGroups(response.data.groups);
+        setUserGroupsPagination(response.data.pagination);
 
         // Load members for each group
-        for (const group of [...adminGroupsData, ...userGroupsData]) {
+        for (const group of response.data.groups) {
           try {
             const membersResponse = await api_client.getChatManagementGroupDetails(group.conversationId);
             if (membersResponse.success && membersResponse.data) {
@@ -194,15 +270,31 @@ export default function ManageChats() {
           }
         }
       }
+    } catch (error) {
+      console.error("Error loading user groups:", error);
+      toast.error("Failed to load user groups");
+    } finally {
+      setUserGroupsLoading(false);
+    }
+  };
 
-      // Load community groups
-      const communityGroupsResponse = await api_client.getChatManagementGroups("community_group");
-      if (communityGroupsResponse.success && communityGroupsResponse.data) {
-        const commGroups = communityGroupsResponse.data;
-        setCommunityGroups(commGroups);
+  const loadCommunityGroups = async () => {
+    try {
+      setCommunityGroupsLoading(true);
+      const response = await api_client.getChatManagementGroups(
+        "community_group",
+        communityGroupsPage,
+        communityGroupsLimit,
+        debouncedCommunityGroupsSearch,
+        communityGroupsShowDeleted
+      );
+
+      if (response.success && response.data) {
+        setCommunityGroups(response.data.groups);
+        setCommunityGroupsPagination(response.data.pagination);
 
         // Load members for each community group
-        for (const group of commGroups) {
+        for (const group of response.data.groups) {
           try {
             const membersResponse = await api_client.getChatManagementGroupDetails(group.conversationId);
             if (membersResponse.success && membersResponse.data) {
@@ -218,19 +310,11 @@ export default function ManageChats() {
           }
         }
       }
-
-      // Load direct chats will be handled separately in loadDirectChats
-
-      // Load communities
-      const communitiesResponse = await api_client.getChatManagementCommunities();
-      if (communitiesResponse.success && communitiesResponse.data) {
-        setCommunities(communitiesResponse.data);
-      }
-
     } catch (error) {
-      console.error("Error loading chat management data:", error);
+      console.error("Error loading community groups:", error);
+      toast.error("Failed to load community groups");
     } finally {
-      setLoading(false);
+      setCommunityGroupsLoading(false);
     }
   };
 
@@ -267,20 +351,33 @@ export default function ManageChats() {
     }
   };
 
-  const handleDeleteChat = (conversationId: number) => {
+  const handleDeleteChat = (conversationId: number, type: 'dm' | 'group' | 'community_group') => {
     setConversationToDelete(conversationId);
+    setActiveTab(type === 'dm' ? 'direct-chats' : type === 'group' ? 'user-groups' : 'community-groups');
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
+    setDeleteDialogOpen(false);
     if (!conversationToDelete) return;
 
     try {
-      const response = await api_client.softDeleteDm(conversationToDelete);
+      let response;
+      response = await api_client.permanentlyDeleteChat(conversationToDelete);
+
       if (response.success) {
-        toast.success("Direct conversation deleted successfully");
-        await loadDirectChats();
-        setDeleteDialogOpen(false);
+        const entityType = activeTab === 'direct-chats' ? 'Direct conversation' : 'Group';
+        toast.success(`${entityType} deleted successfully`);
+
+        // Reload the appropriate list
+        if (activeTab === 'direct-chats') {
+          await loadDirectChats();
+        } else if (activeTab === 'user-groups') {
+          await loadUserGroups();
+        } else if (activeTab === 'community-groups') {
+          await loadCommunityGroups();
+        }
+
         setConversationToDelete(null);
       } else {
         toast.error(response.message || 'Failed to delete conversation');
@@ -293,6 +390,31 @@ export default function ManageChats() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDmSearchQuery(e.target.value);
+  };
+
+  const handleReviveChat = async (conversationId: number, type: 'dm' | 'group' | 'community_group') => {
+    try {
+      const response = await api_client.reviveChat(conversationId);
+      
+      if (response.success) {
+        const entityType = type === 'dm' ? 'Direct conversation' : 'Group';
+        toast.success(`${entityType} revived successfully`);
+        
+        // Reload the appropriate list
+        if (type === 'dm' || activeTab === 'direct-chats') {
+          await loadDirectChats();
+        } else if (type === 'group' || activeTab === 'user-groups') {
+          await loadUserGroups();
+        } else if (type === 'community_group' || activeTab === 'community-groups') {
+          await loadCommunityGroups();
+        }
+      } else {
+        toast.error(response.message || 'Failed to revive conversation');
+      }
+    } catch (error) {
+      console.error("Error reviving conversation:", error);
+      toast.error("Failed to revive conversation");
+    }
   };
 
   if (loading) {
@@ -392,76 +514,52 @@ export default function ManageChats() {
             </TabsList>
           </div>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Admin Managed Groups */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <h2 className="text-xl font-semibold">Groups & Inner Groups</h2>
-              </div>
-              <p className="text-sm text-muted-foreground mb-6">• Admin Managed Groups</p>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {adminGroups.map((group) => (
-                  <AdminGroupCard
-                    key={group.conversationId}
-                    group={group}
-                    members={groupMembers[group.conversationId] || []}
-                    onMembersUpdated={() => handleMembersUpdated(group.conversationId)}
-                  />
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Admin Groups Tab */}
-          <TabsContent value="admin-groups" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {adminGroups.map((group) => (
-                <AdminGroupCard
-                  key={group.conversationId}
-                  group={group}
-                  members={groupMembers[group.conversationId] || []}
-                  onMembersUpdated={() => handleMembersUpdated(group.conversationId)}
-                />
-              ))}
-            </div>
-          </TabsContent>
 
           {/* User Groups Tab */}
           <TabsContent value="user-groups" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {userGroups.map((group) => (
-                <UserGroupCard
-                  key={group.conversationId}
-                  group={group}
-                  members={groupMembers[group.conversationId] || []}
-                  onMembersUpdated={() => handleMembersUpdated(group.conversationId)}
-                />
-              ))}
-            </div>
+            <GroupsTable
+              groups={userGroups}
+              groupMembers={groupMembers}
+              onDelete={(id) => handleDeleteChat(id, 'group')}
+              onRevive={(id) => handleReviveChat(id, 'group')}
+              onMembersUpdated={handleMembersUpdated}
+              pagination={userGroupsPagination}
+              onPageChange={setUserGroupsPage}
+              searchQuery={userGroupsSearchQuery}
+              onSearchChange={(e) => setUserGroupsSearchQuery(e.target.value)}
+              loading={userGroupsLoading}
+              showDeleted={userGroupsShowDeleted}
+              onShowDeletedChange={setUserGroupsShowDeleted}
+              title="User Groups"
+              description="User Created Groups • Manage groups created by users"
+            />
           </TabsContent>
 
           {/* Community Groups Tab */}
           <TabsContent value="community-groups" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {communityGroups.map((group) => (
-                <CommunityGroupCard
-                  key={group.conversationId}
-                  group={group}
-                  members={groupMembers[group.conversationId] || []}
-                  onMembersUpdated={() => handleMembersUpdated(group.conversationId)}
-                />
-              ))}
-            </div>
+            <GroupsTable
+              groups={communityGroups}
+              groupMembers={groupMembers}
+              onDelete={(id) => handleDeleteChat(id, 'community_group')}
+              onRevive={(id) => handleReviveChat(id, 'community_group')}
+              onMembersUpdated={handleMembersUpdated}
+              pagination={communityGroupsPagination}
+              onPageChange={setCommunityGroupsPage}
+              searchQuery={communityGroupsSearchQuery}
+              onSearchChange={(e) => setCommunityGroupsSearchQuery(e.target.value)}
+              loading={communityGroupsLoading}
+              showDeleted={communityGroupsShowDeleted}
+              onShowDeletedChange={setCommunityGroupsShowDeleted}
+              title="Community Groups"
+              description="Community Groups • Admin managed community groups"
+            />
           </TabsContent>
 
           {/* Direct Chats Tab */}
           <TabsContent value="direct-chats" className="space-y-6">
             <DirectChatsTable
               chats={directChats}
-              onDelete={handleDeleteChat}
+              onDelete={(id) => handleDeleteChat(id, 'dm')}
               pagination={dmPagination}
               onPageChange={setDmPage}
               searchQuery={dmSearchQuery}
@@ -471,257 +569,369 @@ export default function ManageChats() {
           </TabsContent>
         </Tabs>
 
-        {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Delete Direct Conversation</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this direct conversation? This action cannot be undone.
-              </DialogDescription>
+              <DialogTitle className="flex items-center space-x-2 text-red-600">
+                <Trash2 className="h-5 w-5" />
+                <span>PERMANENT DELETE WARNING</span>
+              </DialogTitle>
             </DialogHeader>
-            <DialogFooter>
+
+            <div className="space-y-4">
+              {/* Extreme Warning Section */}
+              <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4">
+                <h3 className="font-bold text-red-700 mb-2 text-lg">⚠️ CRITICAL ACTION</h3>
+                <p className="text-red-700 font-semibold mb-2">
+                  This action is PERMANENT and IRREVERSIBLE!
+                </p>
+                <ul className="list-disc list-inside text-red-600 text-sm space-y-1">
+                  <li>Chat will be completely removed from the DATABASE</li>
+                  <li>All chat data will be permanently deleted</li>
+                  <li>No recovery after this point</li>
+                </ul>
+              </div>
+
+              {/* User Info Section */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h3 className="font-semibold mb-3">Conversation to be deleted:</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="font-medium">ID:</span>
+                    <span className="font-bold">{conversationToDelete}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Final Warning */}
+              {/* <div className="bg-yellow-50 border border-yellow-400 rounded-lg p-3"> */}
+              {/*   <p className="text-yellow-800 text-sm font-medium text-center"> */}
+              {/*     🛑 Please confirm you understand this action is permanent and cannot be reversed */}
+              {/*   </p> */}
+              {/* </div> */}
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
-                onClick={() => {
-                  setDeleteDialogOpen(false);
-                  setConversationToDelete(null);
-                }}
+                onClick={() => setDeleteDialogOpen(false)}
+                className="w-full sm:w-auto"
               >
-                Cancel
+                Cancel (Safe Option)
               </Button>
               <Button
                 variant="destructive"
                 onClick={confirmDelete}
+                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 font-bold"
               >
-                Delete
+                <Trash2 className="h-4 w-4 mr-2" />
+                Yes, Permanently Delete Chat
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
       </div>
     </div>
   );
 }
 
-// Admin Group Card Component
-function AdminGroupCard({
-  group,
-  members,
-  onMembersUpdated
+// Groups Table Component
+function GroupsTable({
+  groups,
+  groupMembers,
+  onDelete,
+  onRevive,
+  onMembersUpdated,
+  pagination,
+  onPageChange,
+  searchQuery,
+  onSearchChange,
+  loading,
+  showDeleted,
+  onShowDeletedChange,
+  title,
+  description
 }: {
-  group: ChatGroup;
-  members: any[];
-  onMembersUpdated: () => void;
+  groups: ChatGroup[];
+  groupMembers: { [key: number]: any[] };
+  onDelete: (id: number) => void;
+  onRevive: (id: number) => void;
+  onMembersUpdated: (conversationId: number) => void;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  } | null;
+  onPageChange: (page: number) => void;
+  searchQuery: string;
+  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  loading: boolean;
+  showDeleted: boolean;
+  onShowDeletedChange: (value: boolean) => void;
+  title: string;
+  description: string;
 }) {
+  const [manageDialogOpen, setManageDialogOpen] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [selectedGroupTitle, setSelectedGroupTitle] = useState<string>("");
+
+  const handleManageMembers = (conversationId: number, groupTitle: string) => {
+    setSelectedGroupId(conversationId);
+    setSelectedGroupTitle(groupTitle);
+    setManageDialogOpen(true);
+  };
+
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold">A</span>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-lg">{group.title || "Untitled Group"}</h3>
-            <p className="text-sm text-muted-foreground">No description</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="secondary" className="bg-blue-100 text-blue-700">Admin Managed</Badge>
-          <Badge variant="secondary" className="bg-green-100 text-green-700">Active</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-3">
-          <div className="px-3 py-1 bg-blue-50 rounded-lg">
-            <span className="text-blue-700 text-sm font-medium">0 Inner Groups</span>
-          </div>
-          <div className="px-3 py-1 bg-green-50 rounded-lg">
-            <span className="text-green-700 text-sm font-medium">{members.length} Members</span>
+    <div>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-2">{title}</h2>
+            <p className="text-sm text-muted-foreground">
+              {description}
+              {pagination && ` • Showing ${groups.length} of ${pagination.totalCount} groups`}
+            </p>
           </div>
         </div>
 
-        <div>
-          <h4 className="font-medium mb-2">Inner Groups</h4>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-              <div>
-                <p className="font-medium">Sample Inner Group</p>
-                <p className="text-xs text-muted-foreground">1:00 PM - 3:00 PM • 2 members</p>
+        {/* Search Bar and Filter */}
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by group title, ID, or creator..."
+              value={searchQuery}
+              onChange={onSearchChange}
+              className="pl-10 max-w-md pr-10"
+              disabled={loading}
+            />
+            {loading && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+            )}
+          </div>
+          <Button
+            variant={showDeleted ? "default" : "outline"}
+            onClick={() => onShowDeletedChange(!showDeleted)}
+            disabled={loading}
+          >
+            {showDeleted ? "Hide Deleted" : "Show Deleted"}
+          </Button>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">GROUP ID</TableHead>
+                <TableHead className="w-[250px]">GROUP TITLE</TableHead>
+                <TableHead className="w-[150px]">NO. OF MEMBERS</TableHead>
+                <TableHead className="text-right">ACTIONS</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-12">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Loading groups...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : groups.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    {searchQuery ? "No groups found matching your search" : "No groups found"}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                groups.map((group) => {
+                  const members = groupMembers[group.conversationId] || [];
+                  const isDeleted = showDeleted; // If showDeleted is true, all groups in the list are deleted
+                  return (
+                    <TableRow key={group.conversationId}>
+                      <TableCell className="font-medium">#{group.conversationId}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{group.title || "Untitled Group"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Created by: {group.createrName || `ID: ${group.createrId || "N/A"}`}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{members.length} members</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          {/* Desktop: Full buttons with text */}
+                          <div className="hidden md:flex gap-2">
+                            <ChatViewerDialog
+                              conversationId={group.conversationId}
+                              conversationTitle={group.title || "Untitled Group"}
+                              conversationType={title.includes("Community") ? "community_group" : "group"}
+                              members={members}
+                            />
+                            <MessageViewerDialog
+                              conversationId={group.conversationId}
+                              conversationTitle={group.title || "Untitled Group"}
+                              conversationType={title.includes("Community") ? "community_group" : "group"}
+                            />
+                            {!isDeleted && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleManageMembers(group.conversationId, group.title || "Untitled Group")}
+                                >
+                                  <UserPlus className="h-3 w-3 mr-1" />
+                                  Manage
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => onDelete(group.conversationId)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Delete
+                                </Button>
+                              </>
+                            )}
+                            {isDeleted && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => onRevive(group.conversationId)}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              >
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Revive
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Mobile: Icon-only buttons */}
+                          <div className="flex md:hidden gap-1">
+                            <ChatViewerDialog
+                              conversationId={group.conversationId}
+                              conversationTitle={group.title || "Untitled Group"}
+                              conversationType={title.includes("Community") ? "community_group" : "group"}
+                              members={members}
+                              iconOnly
+                            />
+                            <MessageViewerDialog
+                              conversationId={group.conversationId}
+                              conversationTitle={group.title || "Untitled Group"}
+                              conversationType={title.includes("Community") ? "community_group" : "group"}
+                              iconOnly
+                            />
+                            {!isDeleted && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleManageMembers(group.conversationId, group.title || "Untitled Group")}
+                                  className="px-2"
+                                >
+                                  <UserPlus className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => onDelete(group.conversationId)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
+                            {isDeleted && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => onRevive(group.conversationId)}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50 px-2"
+                              >
+                                <RefreshCw className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+
+          {/* Pagination Controls */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalCount} total)
               </div>
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700">Inner Group</Badge>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(pagination.currentPage - 1)}
+                  disabled={!pagination.hasPreviousPage || loading}
+                >
+                  {loading && pagination.currentPage > 1 ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                  )}
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(pagination.currentPage + 1)}
+                  disabled={!pagination.hasNextPage || loading}
+                >
+                  {loading ? (
+                    <>
+                      Next
+                      <Loader2 className="h-4 w-4 ml-1 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      Next
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <div className="flex gap-2">
-          <ChatViewerDialog
-            conversationId={group.conversationId}
-            conversationTitle={group.title || "Untitled Group"}
-            conversationType="group"
-          />
-          <MessageViewerDialog
-            conversationId={group.conversationId}
-            conversationTitle={group.title || "Untitled Group"}
-            conversationType="group"
-          />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// User Group Card Component
-function UserGroupCard({
-  group,
-  members,
-  onMembersUpdated
-}: {
-  group: ChatGroup;
-  members: any[];
-  onMembersUpdated: () => void;
-}) {
-  const [manageDialogOpen, setManageDialogOpen] = useState(false);
-
-  return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold">U</span>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-lg">{group.title || "Untitled Group"}</h3>
-            <p className="text-sm text-muted-foreground">User created group</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="secondary" className="bg-green-100 text-green-700">User Group</Badge>
-          <Badge variant="secondary" className="bg-green-100 text-green-700">Active</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-3">
-          <div className="px-3 py-1 bg-green-50 rounded-lg">
-            <span className="text-green-700 text-sm font-medium">0 Inner Groups</span>
-          </div>
-          <div className="px-3 py-1 bg-blue-50 rounded-lg">
-            <span className="text-blue-700 text-sm font-medium">{members.length} Members</span>
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <ChatViewerDialog
-            conversationId={group.conversationId}
-            conversationTitle={group.title || "Untitled Group"}
-            conversationType="group"
-            members={members}
-          />
-          <MessageViewerDialog
-            conversationId={group.conversationId}
-            conversationTitle={group.title || "Untitled Group"}
-            conversationType="group"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => setManageDialogOpen(true)}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Manage Members
-          </Button>
-        </div>
-
+      {/* Group Member Management Dialog */}
+      {selectedGroupId && (
         <GroupMemberManagementDialog
           isOpen={manageDialogOpen}
-          onClose={() => setManageDialogOpen(false)}
-          conversationId={group.conversationId}
-          groupTitle={group.title || "Untitled Group"}
-          onSave={onMembersUpdated}
+          onClose={() => {
+            setManageDialogOpen(false);
+            setSelectedGroupId(null);
+            setSelectedGroupTitle("");
+          }}
+          conversationId={selectedGroupId}
+          groupTitle={selectedGroupTitle}
+          onSave={() => onMembersUpdated(selectedGroupId)}
         />
-      </CardContent>
-    </Card>
-  );
-}
-
-// Community Group Card Component
-function CommunityGroupCard({
-  group,
-  members,
-  onMembersUpdated
-}: {
-  group: ChatGroup;
-  members: any[];
-  onMembersUpdated: () => void;
-}) {
-  const [manageDialogOpen, setManageDialogOpen] = useState(false);
-
-  return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold">C</span>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-lg">{group.title || "Untitled Group"}</h3>
-            <p className="text-sm text-muted-foreground">Community group</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="secondary" className="bg-purple-100 text-purple-700">Community Group</Badge>
-          <Badge variant="secondary" className="bg-green-100 text-green-700">Active</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-3">
-          <div className="px-3 py-1 bg-purple-50 rounded-lg">
-            <span className="text-purple-700 text-sm font-medium">{members.length} Members</span>
-          </div>
-          <div className="px-3 py-1 bg-blue-50 rounded-lg">
-            <span className="text-blue-700 text-sm font-medium">Community</span>
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <ChatViewerDialog
-            conversationId={group.conversationId}
-            conversationTitle={group.title || "Untitled Group"}
-            conversationType="community_group"
-            members={members}
-          />
-          <MessageViewerDialog
-            conversationId={group.conversationId}
-            conversationTitle={group.title || "Untitled Group"}
-            conversationType="community_group"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => setManageDialogOpen(true)}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Manage Members
-          </Button>
-        </div>
-
-        <GroupMemberManagementDialog
-          isOpen={manageDialogOpen}
-          onClose={() => setManageDialogOpen(false)}
-          conversationId={group.conversationId}
-          groupTitle={group.title || "Untitled Group"}
-          onSave={onMembersUpdated}
-        />
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 

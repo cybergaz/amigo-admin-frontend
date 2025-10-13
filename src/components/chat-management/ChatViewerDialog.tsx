@@ -12,13 +12,15 @@ export interface ChatViewerDialogProps {
   conversationTitle: string;
   conversationType: "group" | "dm" | "community_group";
   members?: any[];
+  iconOnly?: boolean;
 }
 
 export function ChatViewerDialog({
   conversationId,
   conversationTitle,
   conversationType,
-  members = []
+  members = [],
+  iconOnly = false
 }: ChatViewerDialogProps) {
   const [open, setOpen] = useState(false);
   const [groupDetails, setGroupDetails] = useState<any>(null);
@@ -51,9 +53,9 @@ export function ChatViewerDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="flex-1">
-          <Eye className="h-4 w-4 mr-2" />
-          View Details
+        <Button variant="outline" size="sm" className={iconOnly ? "px-2" : "flex-1"}>
+          <Eye className={iconOnly ? "h-3 w-3" : "h-4 w-4 mr-2"} />
+          {!iconOnly && "View Details"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">

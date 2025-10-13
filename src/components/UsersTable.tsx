@@ -22,6 +22,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   MapPin,
   User,
   Phone,
@@ -245,9 +252,11 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'destructive';
+        return 'destructiveLite';
       case 'sub_admin':
-        return 'default';
+        return 'blue';
+      case 'staff':
+        return 'positive';
       default:
         return 'secondary';
     }
@@ -377,7 +386,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)} className={cn(user.role === 'admin' ? 'bg-indigo-400/20 text-indigo-800' : user.role === 'sub_admin' ? 'bg-blue-400/20 text-blue-800' : 'bg-gray-100 text-gray-800')}>
+                      <Badge variant={getRoleBadgeVariant(user.role)} >
                         {formatString(user.role)}
                       </Badge>
                     </TableCell>
@@ -578,14 +587,23 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
 
             <div className="space-y-3">
               <h3 className="font-semibold">Role Management</h3>
-              <Button
-                onClick={() => updateUserRole('sub_admin')}
-                disabled={updating || selectedUser?.role === 'sub_admin'}
-                className="w-full flex items-center justify-center space-x-2"
-              >
-                <Shield className="h-4 w-4" />
-                <span>Make Sub Admin</span>
-              </Button>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Role</label>
+                <Select
+                  value={selectedUser?.role}
+                  onValueChange={(value: string) => updateUserRole(value)}
+                  disabled={updating}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="sub_admin">Sub Admin</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button
                 onClick={() => updateUserCallAccess(true)}
                 disabled={updating || selectedUser?.call_access}
