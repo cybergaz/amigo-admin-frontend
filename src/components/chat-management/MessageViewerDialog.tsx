@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api_client } from "@/lib/api-client";
-import { MessageSquare, Eye, ArrowLeft, ArrowRight, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
+import { MessageSquare, Eye, ArrowLeft, ArrowRight, RefreshCw, Trash2, AlertTriangle, Download, FileText, FileIcon } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -153,6 +153,95 @@ export function MessageViewerDialog({
     setMessageToDelete(null);
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const renderAttachment = (attachment: any) => {
+    const { url, category, file_name, file_size, mime_type } = attachment;
+
+    switch (category) {
+      case "images":
+        return (
+          <div className="mt-2">
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              <img
+                src={url}
+                alt={file_name}
+                className="max-w-md max-h-96 rounded-lg border hover:opacity-90 transition-opacity cursor-pointer"
+              />
+            </a>
+            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+              <span>{file_name}</span>
+              <span>{formatFileSize(file_size)}</span>
+            </div>
+          </div>
+        );
+
+      case "videos":
+        return (
+          <div className="mt-2">
+            <video
+              controls
+              className="max-w-md max-h-96 rounded-lg border"
+              preload="metadata"
+            >
+              <source src={url} type={mime_type} />
+              Your browser does not support the video tag.
+            </video>
+            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+              <span>{file_name}</span>
+              <span>{formatFileSize(file_size)}</span>
+            </div>
+          </div>
+        );
+
+      case "audios":
+        return (
+          <div className="mt-2 p-4 border rounded-lg bg-gray-50">
+            <audio controls className="w-full max-w-md">
+              <source src={url} type={mime_type} />
+              Your browser does not support the audio tag.
+            </audio>
+            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+              <span>{file_name}</span>
+              <span>{formatFileSize(file_size)}</span>
+            </div>
+          </div>
+        );
+
+      case "docs":
+      default:
+        return (
+          <div className="mt-2 p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="h-8 w-8 text-blue-500" />
+                <div>
+                  <p className="text-sm font-medium group-hover:text-blue-600 transition-colors">
+                    {file_name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {mime_type} • {formatFileSize(file_size)}
+                  </p>
+                </div>
+              </div>
+              <Download className="h-5 w-5 text-muted-foreground group-hover:text-blue-600 transition-colors" />
+            </a>
+          </div>
+        );
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -253,9 +342,7 @@ export function MessageViewerDialog({
                       <Badge variant="secondary" className="mb-2">
                         📎 Attachment
                       </Badge>
-                      <div className="text-xs text-muted-foreground">
-                        {JSON.stringify(message.attachments, null, 2)}
-                      </div>
+                      {renderAttachment(message.attachments)}
                     </div>
                   )}
 
@@ -328,8 +415,8 @@ export function MessageViewerDialog({
                   </p>
                   {messageToDelete.body && (
                     <p className="text-sm text-foreground mt-2 font-mono bg-background p-2 rounded border max-h-20 overflow-y-auto">
-                      {messageToDelete.body.length > 100 
-                        ? `${messageToDelete.body.substring(0, 100)}...` 
+                      {messageToDelete.body.length > 100
+                        ? `${messageToDelete.body.substring(0, 100)}...`
                         : messageToDelete.body}
                     </p>
                   )}
@@ -341,8 +428,8 @@ export function MessageViewerDialog({
             <Button variant="outline" onClick={handleCancelDelete}>
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleConfirmDelete}
               disabled={deletingMessageId === messageToDelete?.id}
             >
