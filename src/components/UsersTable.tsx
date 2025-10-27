@@ -109,7 +109,6 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
       );
       const data = await response.json();
-      console.log("data ->", data)
 
       if (data.status === 'OK' && data.results.length > 0) {
         const result = data.results[0];
@@ -567,17 +566,17 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-black/3 rounded-lg p-4">
               <h3 className="font-semibold mb-3">Current Status</h3>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span>Role:</span>
+                  <span>Role</span>
                   <Badge variant={getRoleBadgeVariant(selectedUser?.role || '')} >
                     {formatString(selectedUser?.role)}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Call Access:</span>
+                  <span>Call Access</span>
                   <Badge variant={selectedUser?.call_access ? 'default' : 'secondary'}>
                     {selectedUser?.call_access ? 'Access' : 'No Access'}
                   </Badge>
@@ -616,6 +615,12 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
             </div>
           </div>
 
+          <div className="mt-4 text-sm">
+            <span>App Version : </span>
+            <Badge variant="blue" className="ml-2">
+              {selectedUser?.app_version || 'N/A'}
+            </Badge>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRoleDialogOpen(false)}>
               Close

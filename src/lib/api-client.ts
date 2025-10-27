@@ -9,6 +9,7 @@ interface UserType {
   phone: string | null;
   email: string | null;
   role: string;
+  user_role: string;
   profile_pic: string | null;
   created_at: string;
   last_seen: string;
@@ -19,6 +20,7 @@ interface UserType {
     longitude: number;
   } | null;
   ip_address: string | null;
+  app_version: string | null;
 }
 
 interface AdminUserType {
@@ -176,9 +178,9 @@ class ApiClient {
     }
   }
 
-  async getUsers(page: number = 1, limit: number = 10, search?: string): Promise<ApiResponse<PaginatedUsersResponse>> {
+  async getUsers(page: number = 1, limit: number = 10, search?: string, user_role?: string): Promise<ApiResponse<PaginatedUsersResponse>> {
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-    return this.makeRequest<PaginatedUsersResponse>(`/admin/fetch-all-users?page=${page}&limit=${limit}${searchParam}`);
+    return this.makeRequest<PaginatedUsersResponse>(`/admin/fetch-all-users?page=${page}&limit=${limit}${searchParam}&role=${user_role || ''}`);
   }
 
   async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {

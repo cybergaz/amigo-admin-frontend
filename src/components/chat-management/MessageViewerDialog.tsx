@@ -315,7 +315,7 @@ export function MessageViewerDialog({
                       <span className="text-sm text-muted-foreground">
                         {formatMessageTime(message.created_at)}
                       </span>
-                      {!message.deleted && (
+                      {
                         <Button
                           size="sm"
                           variant="destructive"
@@ -329,7 +329,7 @@ export function MessageViewerDialog({
                             <Trash2 className="h-3 w-3" />
                           )}
                         </Button>
-                      )}
+                      }
                     </div>
                   </div>
 

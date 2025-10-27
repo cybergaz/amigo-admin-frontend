@@ -29,19 +29,21 @@ interface PaginatedUsers {
   };
 }
 
-export function GroupMemberManagementDialog({ 
-  isOpen, 
-  onClose, 
-  conversationId, 
-  groupTitle, 
-  onSave 
+export function GroupMemberManagementDialog({
+  isOpen,
+  onClose,
+  conversationId,
+  groupTitle,
+  onSave
 }: GroupMemberManagementDialogProps) {
   const [currentMembers, setCurrentMembers] = useState<UserType[]>([]);
+  const [currentMembersIds, setCurrentMembersIds] = useState<number[]>([]);
   const [availableUsers, setAvailableUsers] = useState<UserType[]>([]);
   const [selectedUsersToAdd, setSelectedUsersToAdd] = useState<number[]>([]);
   const [selectedUsersToRemove, setSelectedUsersToRemove] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [membersLoading, setMembersLoading] = useState(false);
+  const [toggleStaff, setToggleStaff] = useState(false);
 
   // Pagination and search states
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,7 +73,6 @@ export function GroupMemberManagementDialog({
     try {
       setMembersLoading(true);
       const response = await api_client.getChatManagementGroupDetails(conversationId);
-      console.log('Group info response:', response);
 
       if (response.success && response.data) {
         let members = [];
@@ -80,13 +81,14 @@ export function GroupMemberManagementDialog({
           members = response.data
             .map((member: any) => {
               if (member.user) {
-                return member.user;
+                return member.user
               } else if (member.userId && member.userName) {
                 return {
                   id: member.userId,
                   name: member.userName,
                   email: member.userEmail || '',
                   profile_pic: member.userProfilePic || null,
+                  user_role: member.user_role
                 };
               }
               return null;
@@ -107,24 +109,27 @@ export function GroupMemberManagementDialog({
     }
   };
 
-  const fetchAvailableUsers = async (page: number, search: string) => {
+  const fetchAvailableUsers = async (page: number, search: string, user_role: string = "user") => {
     try {
       setUsersLoading(true);
-      const response = await api_client.getUsers(page, 20, search);
+      const response = await api_client.getUsers(page, 20, search, user_role);
       if (response.success && response.data) {
         const userData = response.data as PaginatedUsers;
 
         // Filter out current members from available users
         const currentMemberIds = currentMembers.map(member => member.id);
-        const filteredUsers = userData.users.filter(user => !currentMemberIds.includes(user.id));
+        setCurrentMembersIds(currentMemberIds);
+        // let filteredUsers = userData.users.filter(user => !currentMemberIds.includes(user.id));
 
-        setAvailableUsers(filteredUsers);
+        setAvailableUsers(userData.users);
         setTotalUsers(userData.pagination.totalCount);
         setTotalPages(userData.pagination.totalPages);
+        setToggleStaff(user_role === "staff");
       } else {
         setAvailableUsers([]);
         setTotalUsers(0);
         setTotalPages(0);
+        setToggleStaff(user_role === "staff");
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -134,6 +139,7 @@ export function GroupMemberManagementDialog({
       setTotalPages(0);
     } finally {
       setUsersLoading(false);
+      setToggleStaff(user_role === "staff");
     }
   };
 
@@ -270,15 +276,21 @@ export function GroupMemberManagementDialog({
                           <div className="text-sm text-muted-foreground">{member.email}</div>
                         </div>
                       </div>
-                      <Button
-                        variant={selectedUsersToRemove.includes(member.id) ? "default" : "destructive"}
-                        size="sm"
-                        onClick={() => handleUserToggle(member.id, 'remove')}
-                        disabled={loading}
-                        className="min-w-[80px]"
-                      >
-                        {selectedUsersToRemove.includes(member.id) ? 'Selected' : 'Remove'}
-                      </Button>
+
+                      <div className='flex gap-2 justify-center items-center'>
+                        <Badge variant={member.user_role === 'staff' ? "blue" : "secondary"} >
+                          {member.user_role}
+                        </Badge>
+                        <Button
+                          variant={selectedUsersToRemove.includes(member.id) ? "default" : "destructive"}
+                          size="sm"
+                          onClick={() => handleUserToggle(member.id, 'remove')}
+                          disabled={loading}
+                          className="min-w-[80px]"
+                        >
+                          {selectedUsersToRemove.includes(member.id) ? 'Selected' : 'Remove'}
+                        </Button>
+                      </div>
                     </div>
                   ))}
                   {currentMembers.length === 0 && (
@@ -312,18 +324,29 @@ export function GroupMemberManagementDialog({
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
-                Available Users ({totalUsers})
+                Available {toggleStaff ? "Staff" : "Users"} ({totalUsers})
               </h3>
               {selectedUsersToAdd.length > 0 && (
                 <Badge variant="positive" className="px-2 py-1">
                   {selectedUsersToAdd.length} selected
                 </Badge>
               )}
+              <Button
+                variant={"outline"}
+                size="sm"
+                onClick={() => {
+                  fetchAvailableUsers(1, searchTerm, toggleStaff ? "user" : "staff");
+                  setToggleStaff(!toggleStaff);
+                }}
+                disabled={usersLoading}
+              >
+                {toggleStaff ? "Show Users" : "Show Staff"}
+              </Button>
             </div>
 
             <div className="mb-4">
               <Input
-                placeholder="Search users by name or email..."
+                placeholder="Search users by name or phone..."
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full"
@@ -353,18 +376,24 @@ export function GroupMemberManagementDialog({
                         </div>
                         <div>
                           <span className="font-medium">{user.name}</span>
+                          <div className="text-sm text-muted-foreground">{user.phone}</div>
                           <div className="text-sm text-muted-foreground">{user.email}</div>
                         </div>
                       </div>
-                      <Button
-                        variant={selectedUsersToAdd.includes(user.id) ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleUserToggle(user.id, 'add')}
-                        disabled={loading}
-                        className="min-w-[80px]"
-                      >
-                        {selectedUsersToAdd.includes(user.id) ? 'Selected' : 'Add'}
-                      </Button>
+                      <div className='flex gap-2 justify-center items-center'>
+                        <Badge variant={user.role === 'staff' ? "blue" : "secondary"} >
+                          {user.role}
+                        </Badge>
+                        <Button
+                          variant={selectedUsersToAdd.includes(user.id) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleUserToggle(user.id, 'add')}
+                          disabled={loading || currentMembersIds.includes(user.id)}
+                          className="min-w-[80px]"
+                        >
+                          {selectedUsersToAdd.includes(user.id) ? 'Selected' : 'Add'}
+                        </Button>
+                      </div>
                     </div>
                   ))}
                   {availableUsers.length === 0 && !usersLoading && (
@@ -373,7 +402,7 @@ export function GroupMemberManagementDialog({
                         <span className="text-2xl">🔍</span>
                       </div>
                       <p className="text-sm">
-                        {searchTerm ? 'No users found matching your search' : 'No available users'}
+                        {searchTerm ? 'No users found matching your search' : toggleStaff ? "No Available Staff" : "No available User"}
                       </p>
                     </div>
                   )}
