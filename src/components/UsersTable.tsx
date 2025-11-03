@@ -358,6 +358,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                   <TableHead>Joined At</TableHead>
                   <TableHead>Last Seen</TableHead>
                   <TableHead>Location</TableHead>
+                  <TableHead>Version</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -406,6 +407,11 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                         <MapPin className="h-4 w-4" />
                         <span>View</span>
                       </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="blue">
+                        {user.app_version || 'N/A'}
+                      </Badge>
                     </TableCell>
                     <TableCell className='flex gap-2'>
                       <Button
