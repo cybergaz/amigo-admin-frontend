@@ -348,7 +348,7 @@ export function GroupMemberManagementDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-screen min-w-4xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-screen min-w-6xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-xl">Manage Members: {groupTitle}</DialogTitle>
           <DialogDescription className="text-base">
