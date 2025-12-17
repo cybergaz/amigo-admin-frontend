@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { api_client, type UserType } from '@/lib/api-client';
 import { toast } from 'sonner';
 import BouncingBalls from '../ui/bouncing-balls';
+import { Settings } from 'lucide-react';
 
 interface GroupMemberManagementDialogProps {
   isOpen: boolean;
@@ -44,6 +45,11 @@ export function GroupMemberManagementDialog({
   const [loading, setLoading] = useState(false);
   const [membersLoading, setMembersLoading] = useState(false);
   const [toggleStaff, setToggleStaff] = useState(false);
+  const [creatorId, setCreatorId] = useState<number | null>(null);
+  const [creatorName, setCreatorName] = useState<string | null>(null);
+  const [memberRoles, setMemberRoles] = useState<Record<number, 'admin' | 'member'>>({});
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   // Pagination and search states
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,10 +64,30 @@ export function GroupMemberManagementDialog({
       setSelectedUsersToRemove([]);
       setCurrentPage(1);
       setSearchTerm('');
+      setOpenDropdownId(null);
       fetchGroupMembers();
       fetchAvailableUsers(1, '');
     }
   }, [isOpen, conversationId]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId !== null) {
+        const dropdownElement = dropdownRefs.current[openDropdownId];
+        if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+
+    if (openDropdownId !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [openDropdownId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -75,10 +101,47 @@ export function GroupMemberManagementDialog({
       const response = await api_client.getChatManagementGroupDetails(conversationId);
 
       if (response.success && response.data) {
+        // Handle response structure: { members: [...], createrId, createrName, createrProfilePic }
+        const data = response.data;
         let members = [];
+        const roles: Record<number, 'admin' | 'member'> = {};
 
-        if (Array.isArray(response.data)) {
-          members = response.data
+        // Extract creator info
+        if (data.createrId) {
+          setCreatorId(data.createrId);
+        }
+        if (data.createrName) {
+          setCreatorName(data.createrName);
+        }
+
+        // Extract members
+        if (data.members && Array.isArray(data.members)) {
+          members = data.members.map((member: any) => {
+            const userId = member.userId || member.user_id || member.id;
+            const role = member.role || 'member';
+            roles[userId] = role as 'admin' | 'member';
+
+            if (member.user) {
+              return {
+                ...member.user,
+                id: userId,
+                role: role
+              };
+            } else if (userId && (member.userName || member.user_name)) {
+              return {
+                id: userId,
+                name: member.userName || member.user_name,
+                email: member.userEmail || member.user_email || '',
+                profile_pic: member.userProfilePic || member.user_profile_pic || null,
+                user_role: member.user_role,
+                role: role
+              };
+            }
+            return null;
+          }).filter(Boolean);
+        } else if (Array.isArray(data)) {
+          // Fallback for old format
+          members = data
             .map((member: any) => {
               if (member.user) {
                 return member.user
@@ -88,7 +151,8 @@ export function GroupMemberManagementDialog({
                   name: member.userName,
                   email: member.userEmail || '',
                   profile_pic: member.userProfilePic || null,
-                  user_role: member.user_role
+                  user_role: member.user_role,
+                  role: member.role || 'member'
                 };
               }
               return null;
@@ -97,13 +161,16 @@ export function GroupMemberManagementDialog({
         }
 
         setCurrentMembers(members);
+        setMemberRoles(roles);
       } else {
         setCurrentMembers([]);
+        setMemberRoles({});
       }
     } catch (error) {
       console.error('Error fetching group members:', error);
       toast.error('Failed to load group members');
       setCurrentMembers([]);
+      setMemberRoles({});
     } finally {
       setMembersLoading(false);
     }
@@ -225,14 +292,75 @@ export function GroupMemberManagementDialog({
     setCurrentPage(page);
   };
 
+  const handlePromoteToAdmin = async (userId: number) => {
+    try {
+      setLoading(true);
+      const response = await api_client.promoteToAdmin(conversationId, userId);
+      if (response.success) {
+        toast.success('Member promoted to admin successfully');
+        fetchGroupMembers();
+        onSave();
+      } else {
+        toast.error(response.message || 'Failed to promote member');
+      }
+    } catch (error) {
+      toast.error('Failed to promote member');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoteToMember = async (userId: number) => {
+    try {
+      setLoading(true);
+      const response = await api_client.demoteToMember(conversationId, userId);
+      if (response.success) {
+        toast.success('Member demoted to member successfully');
+        fetchGroupMembers();
+        onSave();
+      } else {
+        toast.error(response.message || 'Failed to demote member');
+      }
+    } catch (error) {
+      toast.error('Failed to demote member');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeclareCreator = async (userId: number) => {
+    try {
+      setLoading(true);
+      const response = await api_client.forceDeclareGroupCreator(conversationId, userId);
+      if (response.success) {
+        toast.success('Group creator updated successfully');
+        fetchGroupMembers();
+        onSave();
+      } else {
+        toast.error(response.message || 'Failed to update group creator');
+      }
+    } catch (error) {
+      toast.error('Failed to update group creator');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-screen min-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-xl">Manage Members: {groupTitle}</DialogTitle>
           <DialogDescription className="text-base">
-            Add or remove members from this group.
+            Add or remove members from this group. Promote/demote admins and change group creator.
           </DialogDescription>
+          {creatorName && creatorId && (
+            <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-700">
+                <span className="font-semibold">Group Creator:</span> {creatorName} (ID: {creatorId})
+              </p>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -257,42 +385,119 @@ export function GroupMemberManagementDialog({
                 </div>
               ) : (
                 <div className="p-4 space-y-3">
-                  {currentMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className={`flex justify-between items-center p-3 border rounded-lg transition-colors ${selectedUsersToRemove.includes(member.id)
-                        ? 'bg-destructive/10 border-destructive'
-                        : 'bg-background hover:bg-muted/50'
-                        }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary">
-                            {member.name?.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-medium">{member.name}</span>
-                          <div className="text-sm text-muted-foreground">{member.email}</div>
-                        </div>
-                      </div>
+                  {currentMembers.map((member) => {
+                    const memberRole = memberRoles[member.id] || (member as any).role || 'member';
+                    const isCreator = creatorId === member.id;
+                    const isAdmin = memberRole === 'admin';
 
-                      <div className='flex gap-2 justify-center items-center'>
-                        <Badge variant={member.user_role === 'staff' ? "blue" : "secondary"} >
-                          {member.user_role}
-                        </Badge>
-                        <Button
-                          variant={selectedUsersToRemove.includes(member.id) ? "default" : "destructive"}
-                          size="sm"
-                          onClick={() => handleUserToggle(member.id, 'remove')}
-                          disabled={loading}
-                          className="min-w-[80px]"
-                        >
-                          {selectedUsersToRemove.includes(member.id) ? 'Selected' : 'Remove'}
-                        </Button>
+                    return (
+                      <div
+                        key={member.id}
+                        className={`flex justify-between items-center p-3 border rounded-lg transition-colors ${selectedUsersToRemove.includes(member.id)
+                          ? 'bg-destructive/10 border-destructive'
+                          : isCreator
+                            ? 'bg-yellow-50 border-yellow-300'
+                            : 'bg-background hover:bg-muted/50'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">
+                              {member.name?.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{member.name}</span>
+                              {isCreator && (
+                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                                  Creator
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">{member.email}</div>
+                          </div>
+                        </div>
+
+                        <div className='flex gap-2 justify-center items-center'>
+                          <Badge variant={member.user_role === 'staff' ? "blue" : "secondary"} >
+                            {member.user_role}
+                          </Badge>
+                          <Badge variant={isAdmin ? "default" : "outline"}>
+                            group {memberRole}
+                          </Badge>
+                          <div className="relative" ref={(el) => { dropdownRefs.current[member.id] = el; }}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setOpenDropdownId(openDropdownId === member.id ? null : member.id)}
+                              disabled={loading}
+                              className="h-8 w-8 p-0"
+                              title="Member actions"
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                            {openDropdownId === member.id && (
+                              <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
+                                <div className="p-1">
+                                  {!isAdmin && (
+                                    <Button
+                                      onClick={() => {
+                                        handlePromoteToAdmin(member.id);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      disabled={loading}
+                                      className="w-full text-left px-4 py-2 text-sm text-black bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      Promote to Admin
+                                    </Button>
+                                  )}
+                                  {isAdmin && !isCreator && (
+                                    <Button
+                                      onClick={() => {
+                                        handleDemoteToMember(member.id);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      disabled={loading}
+                                      className="w-full text-left px-4 py-2 text-sm text-black bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      Demote to Member
+                                    </Button>
+                                  )}
+                                  {!isCreator && (
+                                    <Button
+                                      onClick={() => {
+                                        handleDeclareCreator(member.id);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      disabled={loading}
+                                      className="w-full text-left px-4 py-2 text-sm text-yellow-700 bg-white hover:bg-yellow-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      Make Group Creator
+                                    </Button>
+                                  )}
+                                  <div className="border-t border-gray-200 my-1"></div>
+                                  <Button
+                                    onClick={() => {
+                                      handleUserToggle(member.id, 'remove');
+                                      setOpenDropdownId(null);
+                                    }}
+                                    disabled={loading || isCreator}
+                                    className={`w-full text-left bg-white px-4 py-2 text-sm ${selectedUsersToRemove.includes(member.id)
+                                      ? 'bg-blue-50 text-blue-700'
+                                      : 'text-red-700 hover:bg-red-50'
+                                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  >
+                                    {selectedUsersToRemove.includes(member.id) ? 'Deselect for Removal' : 'Remove from Group'}
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {currentMembers.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
                       <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">

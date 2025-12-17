@@ -258,8 +258,8 @@ export default function ManageChats() {
           try {
             const membersResponse = await api_client.getChatManagementGroupDetails(group.conversationId);
             if (membersResponse.success && membersResponse.data) {
-              // Ensure we're setting an array of members
-              const members = Array.isArray(membersResponse.data) ? membersResponse.data : [];
+              // Use data.members instead of data directly
+              const members = Array.isArray(membersResponse.data.members) ? membersResponse.data.members : [];
               setGroupMembers(prev => ({
                 ...prev,
                 [group.conversationId]: members
@@ -298,8 +298,8 @@ export default function ManageChats() {
           try {
             const membersResponse = await api_client.getChatManagementGroupDetails(group.conversationId);
             if (membersResponse.success && membersResponse.data) {
-              // Ensure we're setting an array of members
-              const members = Array.isArray(membersResponse.data) ? membersResponse.data : [];
+              // Use data.members instead of data directly
+              const members = Array.isArray(membersResponse.data.members) ? membersResponse.data.members : [];
               setGroupMembers(prev => ({
                 ...prev,
                 [group.conversationId]: members
@@ -339,8 +339,8 @@ export default function ManageChats() {
     try {
       const membersResponse = await api_client.getChatManagementGroupDetails(conversationId);
       if (membersResponse.success && membersResponse.data) {
-        // Ensure we're setting an array of members
-        const members = Array.isArray(membersResponse.data) ? membersResponse.data : [];
+        // Use data.members instead of data directly
+        const members = Array.isArray(membersResponse.data.members) ? membersResponse.data.members : [];
         setGroupMembers(prev => ({
           ...prev,
           [conversationId]: members

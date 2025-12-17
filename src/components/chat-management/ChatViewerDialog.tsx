@@ -36,8 +36,23 @@ export function ChatViewerDialog({
     try {
       setLoading(true);
       const response = await api_client.getChatManagementGroupDetails(conversationId);
-      if (response.success) {
-        setGroupDetails(response.data);
+      if (response.success && response.data) {
+        // Transform response to match expected structure
+        // Response: { members: [...], createrId, createrName, createrProfilePic }
+        // Expected: { group: { createrId, createrName, createrProfilePic }, members: [...] }
+        setGroupDetails({
+          group: {
+            createrId: response.data.createrId,
+            creater_id: response.data.createrId,
+            createrName: response.data.createrName,
+            creater_name: response.data.createrName,
+            createrProfilePic: response.data.createrProfilePic,
+            creater_profile_pic: response.data.createrProfilePic,
+            created_at: response.data.createdAt,
+            last_message_at: response.data.lastMessageAt
+          },
+          members: response.data.members || []
+        });
       }
     } catch (error) {
       console.error("Error loading group details:", error);
@@ -97,13 +112,13 @@ export function ChatViewerDialog({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-700 font-medium">Created</p>
-                      <p className="text-blue-900">
+                      <p className="text-blue-900 text-sm">
                         {formatDate(groupDetails.group.created_at || groupDetails.group.createdAt)}
                       </p>
                     </div>
                     <div className="p-3 bg-green-50 rounded-lg">
                       <p className="text-sm text-green-700 font-medium">Last Activity</p>
-                      <p className="text-green-900">
+                      <p className="text-green-900 text-sm">
                         {groupDetails.group.last_message_at ?
                           formatDate(groupDetails.group.last_message_at) :
                           "No activity"
@@ -125,15 +140,28 @@ export function ChatViewerDialog({
                     <span className="text-sm font-medium">Conversation ID:</span>
                     <span className="text-sm text-muted-foreground">{conversationId}</span>
                   </div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded">
-                    <span className="text-sm font-medium">Type:</span>
-                    <span className="text-sm text-muted-foreground">{conversationType}</span>
-                  </div>
-                  {groupDetails?.group?.createrName && (
-                    <div className="flex justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-sm font-medium">Created by:</span>
-                      <span className="text-sm text-muted-foreground">{groupDetails.group.createrName}</span>
-                    </div>
+                  {/* <div className="flex justify-between p-2 bg-gray-50 rounded"> */}
+                  {/*   <span className="text-sm font-medium">Type:</span> */}
+                  {/*   <span className="text-sm text-muted-foreground">{conversationType}</span> */}
+                  {/* </div> */}
+                  {groupDetails?.group && (
+                    <>
+                      {groupDetails.group.createrName && (
+                        <div className="flex justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-sm font-medium">Created by:</span>
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm text-muted-foreground">{groupDetails.group.createrName}</span>
+                            <span className="text-xs text-muted-foreground/80">ID: {groupDetails.group.createrId}</span>
+                          </div>
+                        </div>
+                      )}
+                      {/* {(groupDetails.group.createrId || groupDetails.group.creater_id) && ( */}
+                      {/*   <div className="flex justify-between p-2 bg-gray-50 rounded"> */}
+                      {/*     <span className="text-sm font-medium">Creator ID:</span> */}
+                      {/*     <span className="text-sm text-muted-foreground">{groupDetails.group.createrId || groupDetails.group.creater_id}</span> */}
+                      {/*   </div> */}
+                      {/* )} */}
+                    </>
                   )}
                 </div>
               </div>

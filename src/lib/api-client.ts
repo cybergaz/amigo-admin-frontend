@@ -421,8 +421,12 @@ class ApiClient {
   }
 
   async getChatManagementGroupDetails(conversationId: number): Promise<ApiResponse<{
-    group: any;
     members: any[];
+    createrId?: number;
+    createrName?: string;
+    createrProfilePic?: string | null;
+    createdAt?: string;
+    lastMessageAt?: string;
   }>> {
     return this.makeRequest(`/admin/chat-management/group-details/${conversationId}`);
   }
@@ -485,6 +489,36 @@ class ApiClient {
   async reviveChat(conversationId: number): Promise<ApiResponse<any>> {
     return this.makeRequest(`/admin/chat-management/revive-chat/${conversationId}`, {
       method: 'POST'
+    });
+  }
+
+  async promoteToAdmin(conversationId: number, userId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest('/chat/promote-to-admin', {
+      method: 'POST',
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        user_id: userId
+      })
+    });
+  }
+
+  async demoteToMember(conversationId: number, userId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest('/chat/demote-to-member', {
+      method: 'POST',
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        user_id: userId
+      })
+    });
+  }
+
+  async forceDeclareGroupCreator(conversationId: number, memberId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest('/admin/chat-management/force-declare-group-creater', {
+      method: 'POST',
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        member_id: memberId
+      })
     });
   }
 

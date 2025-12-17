@@ -70,12 +70,12 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
       console.log('Group info response:', response); // Debug log
 
       if (response.success && response.data) {
-        // Handle different response structures
+        // Handle response structure: { members: [...], createrId, createrName, createrProfilePic }
         let members = [];
 
-        if (response.data && Array.isArray(response.data)) {
+        if (response.data.members && Array.isArray(response.data.members)) {
           // If members is an array of objects with user property
-          members = response.data
+          members = response.data.members
             .map((member: any) => {
               if (member.user) {
                 return member.user;
@@ -90,11 +90,6 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
               }
               return null;
             })
-            .filter(Boolean);
-        } else if (response.data.group && response.data.group.members) {
-          // Handle nested structure
-          members = response.data.group.members
-            .map((member: any) => member.user)
             .filter(Boolean);
         }
 
