@@ -5,8 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api_client } from "@/lib/api-client";
-import { MessageSquare, Eye, ArrowLeft, ArrowRight, RefreshCw, Trash2, AlertTriangle, Download, FileText, FileIcon } from "lucide-react";
+import { MessageSquare, Eye, ArrowLeft, ArrowRight, RefreshCw, Trash2, AlertTriangle, Download, FileText, FileIcon, Search, Filter, X } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Message {
   id: number;
@@ -47,6 +49,9 @@ export function MessageViewerDialog({
   const [deletingMessageId, setDeletingMessageId] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterDeleted, setFilterDeleted] = useState<string>("all");
 
   useEffect(() => {
     if (open) {
@@ -59,7 +64,9 @@ export function MessageViewerDialog({
       setLoading(true);
       const response = await api_client.getConversationHistory(conversationId, currentPage, 20);
       if (response.success && response.data) {
-        setMessages(response.data.messages);
+        // Sort messages by ID in ascending order
+        const sortedMessages = [...response.data.messages].sort((a, b) => a.id - b.id);
+        setMessages(sortedMessages);
         setPagination(response.data.pagination);
         setTotalPages(response.data.pagination.totalPages);
       }
@@ -154,6 +161,45 @@ export function MessageViewerDialog({
     setShowDeleteConfirm(false);
     setMessageToDelete(null);
   };
+
+  // Filter and search messages
+  const filteredMessages = messages.filter((message) => {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        message.body?.toLowerCase().includes(query) ||
+        message.senderName?.toLowerCase().includes(query) ||
+        message.attachments?.file_name?.toLowerCase().includes(query) ||
+        false;
+      if (!matchesSearch) return false;
+    }
+
+    // Type filter
+    if (filterType !== "all") {
+      if (filterType === "attachment") {
+        // For attachments, check if message has attachments field populated
+        if (!message.attachments) {
+          return false;
+        }
+      } else {
+        // For other types, check the type field
+        if (message.type !== filterType) {
+          return false;
+        }
+      }
+    }
+
+    // Deleted filter
+    if (filterDeleted === "deleted" && !message.deleted) {
+      return false;
+    }
+    if (filterDeleted === "active" && message.deleted) {
+      return false;
+    }
+
+    return true;
+  });
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -267,7 +313,7 @@ export function MessageViewerDialog({
               <Badge variant="outline">{conversationType}</Badge>
               {pagination && (
                 <span className="text-sm text-muted-foreground">
-                  {pagination.totalCount} total messages
+                  {filteredMessages.length} of {pagination.totalCount} messages
                 </span>
               )}
             </div>
@@ -277,8 +323,58 @@ export function MessageViewerDialog({
             </Button>
           </div>
 
+          {/* Search and Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            {/* Search Bar */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search messages by content, sender, or filename..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Filter Controls */}
+            <div className="flex gap-2">
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-[140px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="attachment">Attachment</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterDeleted} onValueChange={setFilterDeleted}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active Only</SelectItem>
+                  <SelectItem value="deleted">Deleted Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Messages List */}
-          <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
@@ -286,77 +382,134 @@ export function MessageViewerDialog({
                   <p className="mt-2 text-muted-foreground">Loading messages...</p>
                 </div>
               </div>
-            ) : messages.length === 0 ? (
+            ) : filteredMessages.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No messages found</p>
+                <p>{searchQuery || filterType !== "all" || filterDeleted !== "all" ? "No messages match your filters" : "No messages found"}</p>
+                {(searchQuery || filterType !== "all" || filterDeleted !== "all") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setFilterType("all");
+                      setFilterDeleted("all");
+                    }}
+                    className="mt-4"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </div>
             ) : (
-              messages.map((message) => (
-                <div key={message.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{getMessageTypeIcon(message.type)}</span>
-                      <span className="font-medium">{message.senderName || `User ${message.sender_id}`}</span>
-                      {getMessageTypeBadge(message.type)}
-                      {message.deleted && (
-                        <Badge variant="destructive" className="text-xs">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Deleted
-                        </Badge>
-                      )}
-                      {message.forwarded_from && (
-                        <Badge variant="outline" className="text-xs">
-                          Forwarded
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        {formatMessageTime(message.created_at)}
-                      </span>
-                      {
+              filteredMessages.map((message) => (
+                <div 
+                  key={message.id} 
+                  className={`border rounded-lg p-4 transition-all ${
+                    message.deleted 
+                      ? "bg-gray-50 opacity-75 border-gray-200" 
+                      : "bg-white hover:bg-gray-50 hover:shadow-sm border-gray-200"
+                  }`}
+                >
+                  {/* Message Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start gap-3 flex-1">
+                      {/* Avatar/Icon */}
+                      <div className="flex-shrink-0 mt-1">
+                        {message.senderProfilePic ? (
+                          <img
+                            src={message.senderProfilePic}
+                            alt={message.senderName || "User"}
+                            className="h-8 w-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
+                            {message.senderName?.[0]?.toUpperCase() || message.sender_id.toString()[0]}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Message Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-semibold text-sm text-gray-900">
+                            {message.senderName || `User ${message.sender_id}`}
+                          </span>
+                          {getMessageTypeBadge(message.type)}
+                          {message.deleted && (
+                            <Badge variant="destructive" className="text-xs">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Deleted
+                            </Badge>
+                          )}
+                          {message.forwarded_from && (
+                            <Badge variant="outline" className="text-xs">
+                              Forwarded
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            ID: {message.id}
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {formatMessageTime(message.created_at)}
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex-shrink-0">
                         <Button
                           size="sm"
-                          variant="destructive"
+                          variant="ghost"
                           onClick={() => handleDeleteClick(message)}
                           disabled={deletingMessageId === message.id}
-                          className="h-6 w-6 p-0"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           {deletingMessageId === message.id ? (
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-destructive"></div>
                           ) : (
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-4 w-4" />
                           )}
                         </Button>
-                      }
+                      </div>
                     </div>
                   </div>
 
+                  {/* Message Body */}
                   {message.body && (
-                    <div className="mb-3">
-                      <p className="text-sm whitespace-pre-wrap">{message.body}</p>
+                    <div className="mb-3 ml-11">
+                      <p className={`text-sm whitespace-pre-wrap break-words ${
+                        message.deleted ? "text-muted-foreground italic" : "text-gray-800"
+                      }`}>
+                        {message.body}
+                      </p>
                     </div>
                   )}
 
+                  {/* Attachments */}
                   {message.attachments && (
-                    <div className="mb-3">
-                      <Badge variant="secondary" className="mb-2">
-                        📎 Attachment
-                      </Badge>
+                    <div className="mb-3 ml-11">
+                      <div className="inline-flex items-center gap-2 mb-2">
+                        <Badge variant="secondary" className="text-xs">
+                          <FileIcon className="h-3 w-3 mr-1" />
+                          Attachment
+                        </Badge>
+                      </div>
                       {renderAttachment(message.attachments)}
                     </div>
                   )}
 
+                  {/* Reply Context */}
                   {message.metadata?.reply_to && (
-                    <div className="mb-3 p-2 bg-gray-100 rounded text-sm">
-                      <p className="font-medium">Replying to:</p>
-                      <p className="text-muted-foreground">{message.metadata.reply_to.body}</p>
+                    <div className="mb-3 ml-11 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r text-sm">
+                      <p className="font-medium text-blue-900 mb-1">Replying to:</p>
+                      <p className="text-blue-700 text-xs">{message.metadata.reply_to.body}</p>
                     </div>
                   )}
 
+                  {/* Edit Indicator */}
                   {message.edited_at && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground ml-11 italic">
                       Edited at {formatMessageTime(message.edited_at)}
                     </div>
                   )}
