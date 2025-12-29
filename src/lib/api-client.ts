@@ -141,12 +141,12 @@ class ApiClient {
     };
 
     try {
-      console.log(`🚀 API Request: ${options.method || "GET"} -> ${url}`, { body: options.body ? JSON.parse(options.body as string) : undefined, headers: defaultOptions.headers, });
+      // console.log(`🚀 API Request: ${options.method || "GET"} -> ${url}`, { body: options.body ? JSON.parse(options.body as string) : undefined, headers: defaultOptions.headers, });
 
       const response = await fetch(url, defaultOptions);
       const data = await response.json();
 
-      console.log(`📥 API Response: ${options.method || "GET"} -> ${url}`, { api_res_status: response.status, data, });
+      // console.log(`📥 API Response: ${options.method || "GET"} -> ${url}`, { api_res_status: response.status, data, });
 
       if (!response.ok && response.status === 401) {
         console.error(`❌ API Error: ${options.method || "GET"} ${url}`, data);
@@ -165,6 +165,19 @@ class ApiClient {
             window.location.reload();
           }
         }
+        // else {
+        //   // console.error('❌ Token refresh failed:', await refresh_response.text());
+        //   // remove all auth cookies 
+        //   console.error('❌ Token refresh failed. Redirecting to login.');
+        //   // document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+        //   // document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+        //   // Optionally, you can redirect the user to the login page
+        //
+        //   // Redirect to login page
+        //   // if (typeof window !== 'undefined') {
+        //   //   window.location.href = '/login';
+        //   // }
+        // }
       }
 
       return data;
