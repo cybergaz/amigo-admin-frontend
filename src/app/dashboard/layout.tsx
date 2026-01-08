@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, Users, MessageSquare, Settings, LayoutDashboard, Bell, UserCheck } from "lucide-react";
+import { Shield, Users, MessageSquare, Settings, LayoutDashboard, Bell, UserCheck, UserPlus } from "lucide-react";
 import Header from "@/components/common/header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/animated-shadcn-tabs";
 import Link from "next/link";
@@ -51,6 +51,7 @@ export default function DashboardLayout({
     if (pathname === "/dashboard/manage-chats") return "chats";
     // if (pathname === "/dashboard/notifications") return "notifications";
     if (pathname === "/dashboard/admin-management") return "admins";
+    if (pathname === "/dashboard/new-users-requests") return "new-users";
     return "dashboard"; // fallback to dashboard
   };
 
@@ -111,6 +112,15 @@ export default function DashboardLayout({
               <Link href={"/dashboard/admin-management"} className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4" />
                 Admin Management
+              </Link>
+            </TabsTrigger>
+          )}
+          {hasPermission("admin-management") && (
+            <TabsTrigger value="new-users" asChild
+              className="px-8 data-[state=active]:text-accent-rblue-dark text-accent-gray flex items-center gap-2">
+              <Link href={"/dashboard/new-users-requests"} className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                New Users Requests
               </Link>
             </TabsTrigger>
           )}

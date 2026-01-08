@@ -552,6 +552,40 @@ class ApiClient {
     return this.makeRequest<UserPermissions>('/admin/user-permissions');
   }
 
+  // Signup Requests Management APIs
+  async getSignupRequests(): Promise<ApiResponse<Array<{
+    id: number;
+    first_name: string;
+    last_name: string;
+    phone: string;
+    status: string;
+    rejected_reason: string | null;
+    created_at: string;
+  }>>> {
+    return this.makeRequest('/admin/auth-management/signup-requests');
+  }
+
+  async updateSignupRequestStatus(data: {
+    phone: string;
+    first_name: string;
+    last_name: string;
+    status?: string;
+    rejected_reason?: string;
+  }): Promise<ApiResponse<{
+    id: number;
+    first_name: string;
+    last_name: string;
+    phone: string;
+    status: string;
+    rejected_reason: string | null;
+    created_at: string;
+  }>> {
+    return this.makeRequest('/admin/auth-management/approve-signup-request', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
 }
 
 export { type UserType, type AdminUserType, type UserPermissions, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup };
