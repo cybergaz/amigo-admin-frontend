@@ -20,8 +20,6 @@ export default function Header({ className }: { className?: string }) {
 
   const user = user_store((state) => state.user);
   const loading = user_store((state) => state.isLoading);
-  console.log("user ->", user)
-
 
   return (
     <div className={cn("w-screen bg-white border-b border-gray-200", className)}>
