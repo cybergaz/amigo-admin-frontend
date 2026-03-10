@@ -46,6 +46,288 @@ import { cn, formatString } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import BouncingBalls from './ui/bouncing-balls';
 
+const COUNTRY_CODES = [
+  { dialCode: '+93', flag: '🇦🇫', name: 'Afghanistan' },
+  { dialCode: '+355', flag: '🇦🇱', name: 'Albania' },
+  { dialCode: '+213', flag: '🇩🇿', name: 'Algeria' },
+  { dialCode: '+376', flag: '🇦🇩', name: 'Andorra' },
+  { dialCode: '+244', flag: '🇦🇴', name: 'Angola' },
+  { dialCode: '+1268', flag: '🇦🇬', name: 'Antigua and Barbuda' },
+  { dialCode: '+54', flag: '🇦🇷', name: 'Argentina' },
+  { dialCode: '+374', flag: '🇦🇲', name: 'Armenia' },
+  { dialCode: '+61', flag: '🇦🇺', name: 'Australia' },
+  { dialCode: '+43', flag: '🇦🇹', name: 'Austria' },
+  { dialCode: '+994', flag: '🇦🇿', name: 'Azerbaijan' },
+  { dialCode: '+1242', flag: '🇧🇸', name: 'Bahamas' },
+  { dialCode: '+973', flag: '🇧🇭', name: 'Bahrain' },
+  { dialCode: '+880', flag: '🇧🇩', name: 'Bangladesh' },
+  { dialCode: '+1246', flag: '🇧🇧', name: 'Barbados' },
+  { dialCode: '+375', flag: '🇧🇾', name: 'Belarus' },
+  { dialCode: '+32', flag: '🇧🇪', name: 'Belgium' },
+  { dialCode: '+501', flag: '🇧🇿', name: 'Belize' },
+  { dialCode: '+229', flag: '🇧🇯', name: 'Benin' },
+  { dialCode: '+975', flag: '🇧🇹', name: 'Bhutan' },
+  { dialCode: '+591', flag: '🇧🇴', name: 'Bolivia' },
+  { dialCode: '+387', flag: '🇧🇦', name: 'Bosnia and Herzegovina' },
+  { dialCode: '+267', flag: '🇧🇼', name: 'Botswana' },
+  { dialCode: '+55', flag: '🇧🇷', name: 'Brazil' },
+  { dialCode: '+673', flag: '🇧🇳', name: 'Brunei' },
+  { dialCode: '+359', flag: '🇧🇬', name: 'Bulgaria' },
+  { dialCode: '+226', flag: '🇧🇫', name: 'Burkina Faso' },
+  { dialCode: '+257', flag: '🇧🇮', name: 'Burundi' },
+  { dialCode: '+855', flag: '🇰🇭', name: 'Cambodia' },
+  { dialCode: '+237', flag: '🇨🇲', name: 'Cameroon' },
+  { dialCode: '+1', flag: '🇨🇦', name: 'Canada' },
+  { dialCode: '+238', flag: '🇨🇻', name: 'Cape Verde' },
+  { dialCode: '+236', flag: '🇨🇫', name: 'Central African Republic' },
+  { dialCode: '+235', flag: '🇹🇩', name: 'Chad' },
+  { dialCode: '+56', flag: '🇨🇱', name: 'Chile' },
+  { dialCode: '+86', flag: '🇨🇳', name: 'China' },
+  { dialCode: '+57', flag: '🇨🇴', name: 'Colombia' },
+  { dialCode: '+269', flag: '🇰🇲', name: 'Comoros' },
+  { dialCode: '+242', flag: '🇨🇬', name: 'Congo' },
+  { dialCode: '+243', flag: '🇨🇩', name: 'DR Congo' },
+  { dialCode: '+506', flag: '🇨🇷', name: 'Costa Rica' },
+  { dialCode: '+385', flag: '🇭🇷', name: 'Croatia' },
+  { dialCode: '+53', flag: '🇨🇺', name: 'Cuba' },
+  { dialCode: '+357', flag: '🇨🇾', name: 'Cyprus' },
+  { dialCode: '+420', flag: '🇨🇿', name: 'Czech Republic' },
+  { dialCode: '+45', flag: '🇩🇰', name: 'Denmark' },
+  { dialCode: '+253', flag: '🇩🇯', name: 'Djibouti' },
+  { dialCode: '+1767', flag: '🇩🇲', name: 'Dominica' },
+  { dialCode: '+1809', flag: '🇩🇴', name: 'Dominican Republic' },
+  { dialCode: '+670', flag: '🇹🇱', name: 'East Timor' },
+  { dialCode: '+593', flag: '🇪🇨', name: 'Ecuador' },
+  { dialCode: '+20', flag: '🇪🇬', name: 'Egypt' },
+  { dialCode: '+503', flag: '🇸🇻', name: 'El Salvador' },
+  { dialCode: '+240', flag: '🇬🇶', name: 'Equatorial Guinea' },
+  { dialCode: '+291', flag: '🇪🇷', name: 'Eritrea' },
+  { dialCode: '+372', flag: '🇪🇪', name: 'Estonia' },
+  { dialCode: '+268', flag: '🇸🇿', name: 'Eswatini' },
+  { dialCode: '+251', flag: '🇪🇹', name: 'Ethiopia' },
+  { dialCode: '+679', flag: '🇫🇯', name: 'Fiji' },
+  { dialCode: '+358', flag: '🇫🇮', name: 'Finland' },
+  { dialCode: '+33', flag: '🇫🇷', name: 'France' },
+  { dialCode: '+241', flag: '🇬🇦', name: 'Gabon' },
+  { dialCode: '+220', flag: '🇬🇲', name: 'Gambia' },
+  { dialCode: '+995', flag: '🇬🇪', name: 'Georgia' },
+  { dialCode: '+49', flag: '🇩🇪', name: 'Germany' },
+  { dialCode: '+233', flag: '🇬🇭', name: 'Ghana' },
+  { dialCode: '+30', flag: '🇬🇷', name: 'Greece' },
+  { dialCode: '+1473', flag: '🇬🇩', name: 'Grenada' },
+  { dialCode: '+502', flag: '🇬🇹', name: 'Guatemala' },
+  { dialCode: '+224', flag: '🇬🇳', name: 'Guinea' },
+  { dialCode: '+245', flag: '🇬🇼', name: 'Guinea-Bissau' },
+  { dialCode: '+592', flag: '🇬🇾', name: 'Guyana' },
+  { dialCode: '+509', flag: '🇭🇹', name: 'Haiti' },
+  { dialCode: '+504', flag: '🇭🇳', name: 'Honduras' },
+  { dialCode: '+36', flag: '🇭🇺', name: 'Hungary' },
+  { dialCode: '+354', flag: '🇮🇸', name: 'Iceland' },
+  { dialCode: '+91', flag: '🇮🇳', name: 'India' },
+  { dialCode: '+62', flag: '🇮🇩', name: 'Indonesia' },
+  { dialCode: '+98', flag: '🇮🇷', name: 'Iran' },
+  { dialCode: '+964', flag: '🇮🇶', name: 'Iraq' },
+  { dialCode: '+353', flag: '🇮🇪', name: 'Ireland' },
+  { dialCode: '+972', flag: '🇮🇱', name: 'Israel' },
+  { dialCode: '+39', flag: '🇮🇹', name: 'Italy' },
+  { dialCode: '+225', flag: '🇨🇮', name: 'Ivory Coast' },
+  { dialCode: '+1876', flag: '🇯🇲', name: 'Jamaica' },
+  { dialCode: '+81', flag: '🇯🇵', name: 'Japan' },
+  { dialCode: '+962', flag: '🇯🇴', name: 'Jordan' },
+  { dialCode: '+7', flag: '🇰🇿', name: 'Kazakhstan' },
+  { dialCode: '+254', flag: '🇰🇪', name: 'Kenya' },
+  { dialCode: '+686', flag: '🇰🇮', name: 'Kiribati' },
+  { dialCode: '+965', flag: '🇰🇼', name: 'Kuwait' },
+  { dialCode: '+996', flag: '🇰🇬', name: 'Kyrgyzstan' },
+  { dialCode: '+856', flag: '🇱🇦', name: 'Laos' },
+  { dialCode: '+371', flag: '🇱🇻', name: 'Latvia' },
+  { dialCode: '+961', flag: '🇱🇧', name: 'Lebanon' },
+  { dialCode: '+266', flag: '🇱🇸', name: 'Lesotho' },
+  { dialCode: '+231', flag: '🇱🇷', name: 'Liberia' },
+  { dialCode: '+218', flag: '🇱🇾', name: 'Libya' },
+  { dialCode: '+423', flag: '🇱🇮', name: 'Liechtenstein' },
+  { dialCode: '+370', flag: '🇱🇹', name: 'Lithuania' },
+  { dialCode: '+352', flag: '🇱🇺', name: 'Luxembourg' },
+  { dialCode: '+261', flag: '🇲🇬', name: 'Madagascar' },
+  { dialCode: '+265', flag: '🇲🇼', name: 'Malawi' },
+  { dialCode: '+60', flag: '🇲🇾', name: 'Malaysia' },
+  { dialCode: '+960', flag: '🇲🇻', name: 'Maldives' },
+  { dialCode: '+223', flag: '🇲🇱', name: 'Mali' },
+  { dialCode: '+356', flag: '🇲🇹', name: 'Malta' },
+  { dialCode: '+692', flag: '🇲🇭', name: 'Marshall Islands' },
+  { dialCode: '+222', flag: '🇲🇷', name: 'Mauritania' },
+  { dialCode: '+230', flag: '🇲🇺', name: 'Mauritius' },
+  { dialCode: '+52', flag: '🇲🇽', name: 'Mexico' },
+  { dialCode: '+691', flag: '🇫🇲', name: 'Micronesia' },
+  { dialCode: '+373', flag: '🇲🇩', name: 'Moldova' },
+  { dialCode: '+377', flag: '🇲🇨', name: 'Monaco' },
+  { dialCode: '+976', flag: '🇲🇳', name: 'Mongolia' },
+  { dialCode: '+382', flag: '🇲🇪', name: 'Montenegro' },
+  { dialCode: '+212', flag: '🇲🇦', name: 'Morocco' },
+  { dialCode: '+258', flag: '🇲🇿', name: 'Mozambique' },
+  { dialCode: '+95', flag: '🇲🇲', name: 'Myanmar' },
+  { dialCode: '+264', flag: '🇳🇦', name: 'Namibia' },
+  { dialCode: '+674', flag: '🇳🇷', name: 'Nauru' },
+  { dialCode: '+977', flag: '🇳🇵', name: 'Nepal' },
+  { dialCode: '+31', flag: '🇳🇱', name: 'Netherlands' },
+  { dialCode: '+64', flag: '🇳🇿', name: 'New Zealand' },
+  { dialCode: '+505', flag: '🇳🇮', name: 'Nicaragua' },
+  { dialCode: '+227', flag: '🇳🇪', name: 'Niger' },
+  { dialCode: '+234', flag: '🇳🇬', name: 'Nigeria' },
+  { dialCode: '+850', flag: '🇰🇵', name: 'North Korea' },
+  { dialCode: '+389', flag: '🇲🇰', name: 'North Macedonia' },
+  { dialCode: '+47', flag: '🇳🇴', name: 'Norway' },
+  { dialCode: '+968', flag: '🇴🇲', name: 'Oman' },
+  { dialCode: '+92', flag: '🇵🇰', name: 'Pakistan' },
+  { dialCode: '+680', flag: '🇵🇼', name: 'Palau' },
+  { dialCode: '+507', flag: '🇵🇦', name: 'Panama' },
+  { dialCode: '+675', flag: '🇵🇬', name: 'Papua New Guinea' },
+  { dialCode: '+595', flag: '🇵🇾', name: 'Paraguay' },
+  { dialCode: '+51', flag: '🇵🇪', name: 'Peru' },
+  { dialCode: '+63', flag: '🇵🇭', name: 'Philippines' },
+  { dialCode: '+48', flag: '🇵🇱', name: 'Poland' },
+  { dialCode: '+351', flag: '🇵🇹', name: 'Portugal' },
+  { dialCode: '+974', flag: '🇶🇦', name: 'Qatar' },
+  { dialCode: '+40', flag: '🇷🇴', name: 'Romania' },
+  { dialCode: '+7', flag: '🇷🇺', name: 'Russia' },
+  { dialCode: '+250', flag: '🇷🇼', name: 'Rwanda' },
+  { dialCode: '+1869', flag: '🇰🇳', name: 'Saint Kitts and Nevis' },
+  { dialCode: '+1758', flag: '🇱🇨', name: 'Saint Lucia' },
+  { dialCode: '+1784', flag: '🇻🇨', name: 'Saint Vincent and the Grenadines' },
+  { dialCode: '+685', flag: '🇼🇸', name: 'Samoa' },
+  { dialCode: '+378', flag: '🇸🇲', name: 'San Marino' },
+  { dialCode: '+239', flag: '🇸🇹', name: 'São Tomé and Príncipe' },
+  { dialCode: '+966', flag: '🇸🇦', name: 'Saudi Arabia' },
+  { dialCode: '+221', flag: '🇸🇳', name: 'Senegal' },
+  { dialCode: '+381', flag: '🇷🇸', name: 'Serbia' },
+  { dialCode: '+248', flag: '🇸🇨', name: 'Seychelles' },
+  { dialCode: '+232', flag: '🇸🇱', name: 'Sierra Leone' },
+  { dialCode: '+65', flag: '🇸🇬', name: 'Singapore' },
+  { dialCode: '+421', flag: '🇸🇰', name: 'Slovakia' },
+  { dialCode: '+386', flag: '🇸🇮', name: 'Slovenia' },
+  { dialCode: '+677', flag: '🇸🇧', name: 'Solomon Islands' },
+  { dialCode: '+252', flag: '🇸🇴', name: 'Somalia' },
+  { dialCode: '+27', flag: '🇿🇦', name: 'South Africa' },
+  { dialCode: '+82', flag: '🇰🇷', name: 'South Korea' },
+  { dialCode: '+211', flag: '🇸🇸', name: 'South Sudan' },
+  { dialCode: '+34', flag: '🇪🇸', name: 'Spain' },
+  { dialCode: '+94', flag: '🇱🇰', name: 'Sri Lanka' },
+  { dialCode: '+249', flag: '🇸🇩', name: 'Sudan' },
+  { dialCode: '+597', flag: '🇸🇷', name: 'Suriname' },
+  { dialCode: '+46', flag: '🇸🇪', name: 'Sweden' },
+  { dialCode: '+41', flag: '🇨🇭', name: 'Switzerland' },
+  { dialCode: '+963', flag: '🇸🇾', name: 'Syria' },
+  { dialCode: '+886', flag: '🇹🇼', name: 'Taiwan' },
+  { dialCode: '+992', flag: '🇹🇯', name: 'Tajikistan' },
+  { dialCode: '+255', flag: '🇹🇿', name: 'Tanzania' },
+  { dialCode: '+66', flag: '🇹🇭', name: 'Thailand' },
+  { dialCode: '+228', flag: '🇹🇬', name: 'Togo' },
+  { dialCode: '+676', flag: '🇹🇴', name: 'Tonga' },
+  { dialCode: '+1868', flag: '🇹🇹', name: 'Trinidad and Tobago' },
+  { dialCode: '+216', flag: '🇹🇳', name: 'Tunisia' },
+  { dialCode: '+90', flag: '🇹🇷', name: 'Turkey' },
+  { dialCode: '+993', flag: '🇹🇲', name: 'Turkmenistan' },
+  { dialCode: '+688', flag: '🇹🇻', name: 'Tuvalu' },
+  { dialCode: '+256', flag: '🇺🇬', name: 'Uganda' },
+  { dialCode: '+380', flag: '🇺🇦', name: 'Ukraine' },
+  { dialCode: '+971', flag: '🇦🇪', name: 'United Arab Emirates' },
+  { dialCode: '+44', flag: '🇬🇧', name: 'United Kingdom' },
+  { dialCode: '+1', flag: '🇺🇸', name: 'United States' },
+  { dialCode: '+598', flag: '🇺🇾', name: 'Uruguay' },
+  { dialCode: '+998', flag: '🇺🇿', name: 'Uzbekistan' },
+  { dialCode: '+678', flag: '🇻🇺', name: 'Vanuatu' },
+  { dialCode: '+379', flag: '🇻🇦', name: 'Vatican City' },
+  { dialCode: '+58', flag: '🇻🇪', name: 'Venezuela' },
+  { dialCode: '+84', flag: '🇻🇳', name: 'Vietnam' },
+  { dialCode: '+967', flag: '🇾🇪', name: 'Yemen' },
+  { dialCode: '+260', flag: '🇿🇲', name: 'Zambia' },
+  { dialCode: '+263', flag: '🇿🇼', name: 'Zimbabwe' },
+];
+
+interface CountryCodeSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const CountryCodeSelect: React.FC<CountryCodeSelectProps> = ({ value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  const filtered = search.trim()
+    ? COUNTRY_CODES.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.dialCode.includes(search)
+      )
+    : COUNTRY_CODES;
+
+  const selected = COUNTRY_CODES.find(c => c.dialCode === value) ?? COUNTRY_CODES[0];
+
+  // Close on outside click
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative w-28 shrink-0">
+      <button
+        type="button"
+        onClick={() => { setOpen(o => !o); setSearch(''); }}
+        className="flex items-center gap-1 w-full h-9 px-2 rounded-md border border-input bg-background text-sm hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <span>{selected.flag}</span>
+        <span className="font-mono text-xs">{selected.dialCode}</span>
+        <span className="ml-auto text-gray-400 text-xs">▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 top-10 left-0 w-64 rounded-md border border-input bg-background shadow-lg">
+          <div className="p-2 border-b">
+            <input
+              autoFocus
+              className="w-full text-sm px-2 py-1 rounded border border-input outline-none focus:ring-2 focus:ring-ring bg-background"
+              placeholder="Search country or code..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <ul className="max-h-52 overflow-y-auto py-1">
+            {filtered.length === 0 && (
+              <li className="px-3 py-2 text-sm text-gray-500">No results</li>
+            )}
+            {filtered.map(c => (
+              <li
+                key={`${c.name}-${c.dialCode}`}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-accent',
+                  c.dialCode === value && c.name === selected.name ? 'bg-accent font-medium' : ''
+                )}
+                onMouseDown={() => {
+                  onChange(c.dialCode);
+                  setOpen(false);
+                  setSearch('');
+                }}
+              >
+                <span>{c.flag}</span>
+                <span className="font-mono text-xs w-10 shrink-0">{c.dialCode}</span>
+                <span className="truncate">{c.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface UsersTableProps {
   className?: string;
   searchTerm?: string;
@@ -78,6 +360,9 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
   const [locationInfo, setLocationInfo] = useState<LocationInfo | null>(null);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+1');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [updatingPhone, setUpdatingPhone] = useState(false);
 
   const fetchUsers = async (page: number = 1, search?: string) => {
     try {
@@ -167,7 +452,29 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
 
   const handleRoleEdit = (user: UserType) => {
     setSelectedUser(user);
+    setPhoneNumber('');
+    setPhoneCountryCode('+1');
     setRoleDialogOpen(true);
+  };
+
+  const updateUserPhoneNumber = async () => {
+    if (!selectedUser || !phoneNumber.trim()) return;
+    const fullPhone = `${phoneCountryCode}${phoneNumber.trim()}`;
+    try {
+      setUpdatingPhone(true);
+      const response = await api_client.updateUserPhoneNumber(selectedUser.id, fullPhone);
+      if (response.success) {
+        toast.success('Phone number updated successfully');
+        setPhoneNumber('');
+        fetchUsers(pagination.currentPage, searchTerm);
+      } else {
+        toast.error(response.message || 'Failed to update phone number');
+      }
+    } catch {
+      toast.error('Failed to update phone number');
+    } finally {
+      setUpdatingPhone(false);
+    }
   };
 
   const handleDeleteClick = (user: UserType) => {
@@ -617,6 +924,29 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
               >
                 <Phone className="h-4 w-4" />
                 <span>Grant Call Access</span>
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold">Update Phone Number</h3>
+              <p className="text-xs text-gray-500">Current: {selectedUser?.phone || 'N/A'}</p>
+              <div className="flex gap-2">
+                <CountryCodeSelect value={phoneCountryCode} onChange={setPhoneCountryCode} />
+                <Input
+                  placeholder="Phone number"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                  className="flex-1"
+                />
+              </div>
+              <Button
+                onClick={updateUserPhoneNumber}
+                disabled={updatingPhone || !phoneNumber.trim()}
+                variant="outline"
+                className="w-full flex items-center justify-center space-x-2"
+              >
+                <Phone className="h-4 w-4" />
+                <span>{updatingPhone ? 'Updating...' : 'Update Phone Number'}</span>
               </Button>
             </div>
           </div>

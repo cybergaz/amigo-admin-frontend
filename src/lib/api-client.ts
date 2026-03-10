@@ -578,6 +578,13 @@ class ApiClient {
     return this.makeRequest('/admin/auth-management/signup-requests');
   }
 
+  async updateUserPhoneNumber(user_id: number, phone: string): Promise<ApiResponse<UserType>> {
+    return this.makeRequest<UserType>('/admin/user/update-phone-number', {
+      method: 'POST',
+      body: JSON.stringify({ user_id, phone }),
+    });
+  }
+
   async updateSignupRequestStatus(data: {
     phone: string;
     first_name: string;
