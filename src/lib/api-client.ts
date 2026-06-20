@@ -39,6 +39,12 @@ interface UserPermissions {
   active: boolean;
 }
 
+interface MarqueeBanner {
+  text: string;
+  enabled: boolean;
+  updated_at: string | null;
+}
+
 interface PaginatedUsersResponse {
   users: UserType[];
   pagination: {
@@ -565,6 +571,18 @@ class ApiClient {
     return this.makeRequest<UserPermissions>('/admin/user-permissions');
   }
 
+  // Marquee banner (super-admin only). Shown on the app's group-list screen.
+  async getMarqueeBanner(): Promise<ApiResponse<MarqueeBanner>> {
+    return this.makeRequest<MarqueeBanner>('/admin/marquee-banner');
+  }
+
+  async updateMarqueeBanner(text: string, enabled: boolean): Promise<ApiResponse<MarqueeBanner>> {
+    return this.makeRequest<MarqueeBanner>('/admin/marquee-banner', {
+      method: 'PUT',
+      body: JSON.stringify({ text, enabled }),
+    });
+  }
+
   // Signup Requests Management APIs
   async getSignupRequests(): Promise<ApiResponse<Array<{
     id: number;
@@ -608,6 +626,6 @@ class ApiClient {
 
 }
 
-export { type UserType, type AdminUserType, type UserPermissions, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup };
+export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup };
 
 export const api_client = new ApiClient();

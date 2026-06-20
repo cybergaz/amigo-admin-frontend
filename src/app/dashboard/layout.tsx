@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, Users, MessageSquare, Settings, LayoutDashboard, Bell, UserCheck, UserPlus } from "lucide-react";
+import { Shield, Users, MessageSquare, Settings, LayoutDashboard, Bell, UserCheck, UserPlus, Megaphone } from "lucide-react";
 import Header from "@/components/common/header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/animated-shadcn-tabs";
 import Link from "next/link";
@@ -52,6 +52,7 @@ export default function DashboardLayout({
     // if (pathname === "/dashboard/notifications") return "notifications";
     if (pathname === "/dashboard/admin-management") return "admins";
     if (pathname === "/dashboard/new-users-requests") return "new-users";
+    if (pathname === "/dashboard/marquee-banner") return "marquee-banner";
     return "dashboard"; // fallback to dashboard
   };
 
@@ -121,6 +122,16 @@ export default function DashboardLayout({
               <Link href={"/dashboard/new-users-requests"} className="flex items-center gap-2">
                 <UserPlus className="w-4 h-4" />
                 New Users Requests
+              </Link>
+            </TabsTrigger>
+          )}
+          {/* Super-admin only — sub-admins never see the global banner control */}
+          {userPermissions?.role === "admin" && (
+            <TabsTrigger value="marquee-banner" asChild
+              className="px-8 data-[state=active]:text-accent-rblue-dark text-accent-gray flex items-center gap-2">
+              <Link href={"/dashboard/marquee-banner"} className="flex items-center gap-2">
+                <Megaphone className="w-4 h-4" />
+                Marquee Banner
               </Link>
             </TabsTrigger>
           )}
