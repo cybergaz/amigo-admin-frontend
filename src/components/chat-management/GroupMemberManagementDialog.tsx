@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { api_client, type UserType } from '@/lib/api-client';
 import { toast } from 'sonner';
 import BouncingBalls from '../ui/bouncing-balls';
-import { Settings } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, Search, UserPlus, UserMinus, Shield, ShieldOff, Crown, X, Check } from 'lucide-react';
 
 interface GroupMemberManagementDialogProps {
   isOpen: boolean;
@@ -101,12 +101,10 @@ export function GroupMemberManagementDialog({
       const response = await api_client.getChatManagementGroupDetails(conversationId);
 
       if (response.success && response.data) {
-        // Handle response structure: { members: [...], createrId, createrName, createrProfilePic }
         const data = response.data;
         let members = [];
         const roles: Record<number, 'admin' | 'member'> = {};
 
-        // Extract creator info
         if (data.createrId) {
           setCreatorId(data.createrId);
         }
@@ -114,7 +112,6 @@ export function GroupMemberManagementDialog({
           setCreatorName(data.createrName);
         }
 
-        // Extract members
         if (data.members && Array.isArray(data.members)) {
           members = data.members.map((member: any) => {
             const userId = member.userId || member.user_id || member.id;
@@ -140,7 +137,6 @@ export function GroupMemberManagementDialog({
             return null;
           }).filter(Boolean);
         } else if (Array.isArray(data)) {
-          // Fallback for old format
           members = data
             .map((member: any) => {
               if (member.user) {
@@ -183,10 +179,8 @@ export function GroupMemberManagementDialog({
       if (response.success && response.data) {
         const userData = response.data as PaginatedUsers;
 
-        // Filter out current members from available users
         const currentMemberIds = currentMembers.map(member => member.id);
         setCurrentMembersIds(currentMemberIds);
-        // let filteredUsers = userData.users.filter(user => !currentMemberIds.includes(user.id));
 
         setAvailableUsers(userData.users);
         setTotalUsers(userData.pagination.totalCount);
@@ -239,7 +233,6 @@ export function GroupMemberManagementDialog({
     try {
       setLoading(true);
 
-      // Remove members one by one
       for (const userId of selectedUsersToRemove) {
         await api_client.removeMemberFromChat(conversationId, userId);
       }
@@ -297,7 +290,7 @@ export function GroupMemberManagementDialog({
       setLoading(true);
       const response = await api_client.promoteToAdmin(conversationId, userId);
       if (response.success) {
-        toast.success('Member promoted to admin successfully');
+        toast.success('Member promoted to admin');
         fetchGroupMembers();
         onSave();
       } else {
@@ -315,7 +308,7 @@ export function GroupMemberManagementDialog({
       setLoading(true);
       const response = await api_client.demoteToMember(conversationId, userId);
       if (response.success) {
-        toast.success('Member demoted to member successfully');
+        toast.success('Member demoted successfully');
         fetchGroupMembers();
         onSave();
       } else {
@@ -333,7 +326,7 @@ export function GroupMemberManagementDialog({
       setLoading(true);
       const response = await api_client.forceDeclareGroupCreator(conversationId, userId);
       if (response.success) {
-        toast.success('Group creator updated successfully');
+        toast.success('Group creator updated');
         fetchGroupMembers();
         onSave();
       } else {
@@ -346,387 +339,387 @@ export function GroupMemberManagementDialog({
     }
   };
 
+  const hasChanges = selectedUsersToAdd.length > 0 || selectedUsersToRemove.length > 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-screen min-w-6xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="text-xl">Manage Members: {groupTitle}</DialogTitle>
-          <DialogDescription className="text-base">
-            Add or remove members from this group. Promote/demote admins and change group creator.
-          </DialogDescription>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">{groupTitle}</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Manage group members, roles, and permissions
+            </DialogDescription>
+          </DialogHeader>
           {creatorName && creatorId && (
-            <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-700">
-                <span className="font-semibold">Group Creator:</span> {creatorName} (ID: {creatorId})
-              </p>
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+              <Crown className="h-3.5 w-3.5 text-amber-500" />
+              <span>Created by <span className="font-medium text-foreground">{creatorName}</span></span>
             </div>
           )}
-        </DialogHeader>
+        </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* Current Members */}
-          <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                Current Members ({currentMembers.length})
-              </h3>
-              {selectedUsersToRemove.length > 0 && (
-                <Badge variant="destructiveLite" className="px-2 py-1">
-                  {selectedUsersToRemove.length} selected
-                </Badge>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto border rounded-lg bg-muted/20">
-              {membersLoading ? (
-                <div className="flex flex-col items-center justify-center h-48">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <p className="mt-3 text-sm text-muted-foreground">Loading members...</p>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Current Members */}
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">Members</h3>
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {currentMembers.length}
+                  </span>
                 </div>
-              ) : (
-                <div className="p-4 space-y-3">
-                  {currentMembers.map((member) => {
-                    const memberRole = memberRoles[member.id] || (member as any).role || 'member';
-                    const isCreator = creatorId === member.id;
-                    const isAdmin = memberRole === 'admin';
+                {selectedUsersToRemove.length > 0 && (
+                  <span className="text-xs font-medium text-red-600">
+                    {selectedUsersToRemove.length} to remove
+                  </span>
+                )}
+              </div>
 
-                    return (
-                      <div
-                        key={member.id}
-                        className={`flex justify-between items-center p-3 border rounded-lg transition-colors ${selectedUsersToRemove.includes(member.id)
-                          ? 'bg-destructive/10 border-destructive'
-                          : isCreator
-                            ? 'bg-yellow-50 border-yellow-300'
-                            : 'bg-background hover:bg-muted/50'
+              <div className="flex-1 border rounded-lg overflow-hidden">
+                {membersLoading ? (
+                  <div className="flex items-center justify-center h-48">
+                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
+                  </div>
+                ) : currentMembers.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+                    <p className="text-sm">No members</p>
+                  </div>
+                ) : (
+                  <div className="divide-y max-h-[400px] overflow-y-auto">
+                    {currentMembers.map((member) => {
+                      const memberRole = memberRoles[member.id] || (member as any).role || 'member';
+                      const isCreator = creatorId === member.id;
+                      const isAdmin = memberRole === 'admin';
+                      const isMarkedForRemoval = selectedUsersToRemove.includes(member.id);
+
+                      return (
+                        <div
+                          key={member.id}
+                          className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                            isMarkedForRemoval
+                              ? 'bg-red-50'
+                              : 'hover:bg-muted/30'
                           }`}
-                      >
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-sm font-medium text-primary">
+                        >
+                          {/* Avatar */}
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                            <span className="text-xs font-medium text-muted-foreground">
                               {member.name?.charAt(0).toUpperCase()}
                             </span>
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{member.name}</span>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-medium truncate">{member.name}</span>
                               {isCreator && (
-                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                                  Creator
-                                </Badge>
+                                <Crown className="h-3 w-3 text-amber-500 shrink-0" />
                               )}
                             </div>
-                            <div className="text-sm text-muted-foreground">{member.email}</div>
+                            <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                           </div>
-                        </div>
 
-                        <div className='flex gap-2 justify-center items-center'>
-                          <Badge variant={member.user_role === 'staff' ? "blue" : "secondary"} >
-                            {member.user_role}
-                          </Badge>
-                          <Badge variant={isAdmin ? "default" : "outline"}>
-                            group {memberRole}
-                          </Badge>
-                          <div className="relative" ref={(el) => { dropdownRefs.current[member.id] = el; }}>
-                            <Button
-                              variant="outline"
-                              size="sm"
+                          {/* Badges */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {member.user_role === 'staff' && (
+                              <Badge variant="blue" className="text-[10px] px-1.5 py-0">
+                                staff
+                              </Badge>
+                            )}
+                            {isAdmin && (
+                              <Badge variant="default" className="text-[10px] px-1.5 py-0">
+                                admin
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Actions dropdown */}
+                          <div className="relative shrink-0" ref={(el) => { dropdownRefs.current[member.id] = el; }}>
+                            <button
                               onClick={() => setOpenDropdownId(openDropdownId === member.id ? null : member.id)}
                               disabled={loading}
-                              className="h-8 w-8 p-0"
-                              title="Member actions"
+                              className="p-1.5 rounded-md hover:bg-muted transition-colors disabled:opacity-50"
                             >
-                              <Settings className="h-4 w-4" />
-                            </Button>
+                              <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+
                             {openDropdownId === member.id && (
-                              <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
-                                <div className="p-1">
-                                  {!isAdmin && (
-                                    <Button
-                                      onClick={() => {
-                                        handlePromoteToAdmin(member.id);
-                                        setOpenDropdownId(null);
-                                      }}
-                                      disabled={loading}
-                                      className="w-full text-left px-4 py-2 text-sm text-black bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      Promote to Admin
-                                    </Button>
-                                  )}
-                                  {isAdmin && !isCreator && (
-                                    <Button
-                                      onClick={() => {
-                                        handleDemoteToMember(member.id);
-                                        setOpenDropdownId(null);
-                                      }}
-                                      disabled={loading}
-                                      className="w-full text-left px-4 py-2 text-sm text-black bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      Demote to Member
-                                    </Button>
-                                  )}
-                                  {!isCreator && (
-                                    <Button
-                                      onClick={() => {
-                                        handleDeclareCreator(member.id);
-                                        setOpenDropdownId(null);
-                                      }}
-                                      disabled={loading}
-                                      className="w-full text-left px-4 py-2 text-sm text-yellow-700 bg-white hover:bg-yellow-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      Make Group Creator
-                                    </Button>
-                                  )}
-                                  <div className="border-t border-gray-200 my-1"></div>
-                                  <Button
-                                    onClick={() => {
-                                      handleUserToggle(member.id, 'remove');
-                                      setOpenDropdownId(null);
-                                    }}
-                                    disabled={loading || isCreator}
-                                    className={`w-full text-left bg-white px-4 py-2 text-sm ${selectedUsersToRemove.includes(member.id)
-                                      ? 'bg-blue-50 text-blue-700'
-                                      : 'text-red-700 hover:bg-red-50'
-                                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-white border rounded-lg shadow-lg py-1">
+                                {!isAdmin && (
+                                  <button
+                                    onClick={() => { handlePromoteToAdmin(member.id); setOpenDropdownId(null); }}
+                                    disabled={loading}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-muted/50 disabled:opacity-50"
                                   >
-                                    {selectedUsersToRemove.includes(member.id) ? 'Deselect for Removal' : 'Remove from Group'}
-                                  </Button>
-                                </div>
+                                    <Shield className="h-3.5 w-3.5" />
+                                    Make Admin
+                                  </button>
+                                )}
+                                {isAdmin && !isCreator && (
+                                  <button
+                                    onClick={() => { handleDemoteToMember(member.id); setOpenDropdownId(null); }}
+                                    disabled={loading}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-muted/50 disabled:opacity-50"
+                                  >
+                                    <ShieldOff className="h-3.5 w-3.5" />
+                                    Remove Admin
+                                  </button>
+                                )}
+                                {!isCreator && (
+                                  <button
+                                    onClick={() => { handleDeclareCreator(member.id); setOpenDropdownId(null); }}
+                                    disabled={loading}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                                  >
+                                    <Crown className="h-3.5 w-3.5" />
+                                    Make Creator
+                                  </button>
+                                )}
+                                <div className="border-t my-1" />
+                                <button
+                                  onClick={() => { handleUserToggle(member.id, 'remove'); setOpenDropdownId(null); }}
+                                  disabled={loading || isCreator}
+                                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left disabled:opacity-50 ${
+                                    isMarkedForRemoval
+                                      ? 'text-blue-600 hover:bg-blue-50'
+                                      : 'text-red-600 hover:bg-red-50'
+                                  }`}
+                                >
+                                  {isMarkedForRemoval ? <X className="h-3.5 w-3.5" /> : <UserMinus className="h-3.5 w-3.5" />}
+                                  {isMarkedForRemoval ? 'Cancel Removal' : 'Remove'}
+                                </button>
                               </div>
                             )}
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  {currentMembers.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">
-                        <span className="text-2xl">👥</span>
-                      </div>
-                      <p className="text-sm">No members in this group</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
-            {selectedUsersToRemove.length > 0 && selectedUsersToAdd.length === 0 && (
-              <div className="mt-4">
+              {selectedUsersToRemove.length > 0 && selectedUsersToAdd.length === 0 && (
                 <Button
                   variant="destructive"
                   onClick={handleRemoveMembers}
                   disabled={loading}
-                  className="w-full h-10"
-                  size="lg"
+                  className="mt-3 h-9"
+                  size="sm"
                 >
-                  {loading ? 'Removing...' : `Remove ${selectedUsersToRemove.length} Selected Member${selectedUsersToRemove.length > 1 ? 's' : ''}`}
+                  {loading ? 'Removing...' : `Remove ${selectedUsersToRemove.length} Member${selectedUsersToRemove.length > 1 ? 's' : ''}`}
                 </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Available Users */}
-          <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                Available {toggleStaff ? "Staff" : "Users"} ({totalUsers})
-              </h3>
-              {selectedUsersToAdd.length > 0 && (
-                <Badge variant="positive" className="px-2 py-1">
-                  {selectedUsersToAdd.length} selected
-                </Badge>
               )}
-              <Button
-                variant={"outline"}
-                size="sm"
-                onClick={() => {
-                  fetchAvailableUsers(1, searchTerm, toggleStaff ? "user" : "staff");
-                  setToggleStaff(!toggleStaff);
-                }}
-                disabled={usersLoading}
-              >
-                {toggleStaff ? "Show Users" : "Show Staff"}
-              </Button>
             </div>
 
-            <div className="mb-4">
-              <Input
-                placeholder="Search users by name or phone..."
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full"
-              />
-            </div>
-
-            <div className="flex-1 overflow-y-auto border rounded-lg bg-muted/20">
-              {usersLoading ? (
-                <div className="flex flex-col items-center justify-center h-48">
-                  <BouncingBalls balls={4} className=" fill-black stroke-black" animation="animate-bounce-md" />
+            {/* Available Users */}
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {toggleStaff ? 'Staff' : 'Users'}
+                  </h3>
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {totalUsers}
+                  </span>
                 </div>
-              ) : (
-                <div className="p-4 space-y-3">
-                  {availableUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className={`flex justify-between items-center p-3 border rounded-lg transition-colors ${selectedUsersToAdd.includes(user.id)
-                        ? 'bg-primary/10 border-primary'
-                        : 'bg-background hover:bg-muted/50'
-                        }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary">
-                            {user.name?.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-medium">{user.name}</span>
-                          <div className="text-sm text-muted-foreground">{user.phone}</div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
-                        </div>
-                      </div>
-                      <div className='flex gap-2 justify-center items-center'>
-                        <Badge variant={user.role === 'staff' ? "blue" : "secondary"} >
-                          {user.role}
-                        </Badge>
-                        <Button
-                          variant={selectedUsersToAdd.includes(user.id) ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleUserToggle(user.id, 'add')}
-                          disabled={loading || currentMembersIds.includes(user.id)}
-                          className="min-w-[80px]"
-                        >
-                          {selectedUsersToAdd.includes(user.id) ? 'Selected' : 'Add'}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {availableUsers.length === 0 && !usersLoading && (
-                    <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">
-                        <span className="text-2xl">🔍</span>
-                      </div>
-                      <p className="text-sm">
-                        {searchTerm ? 'No users found matching your search' : toggleStaff ? "No Available Staff" : "No available User"}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-2">
+                  {selectedUsersToAdd.length > 0 && (
+                    <span className="text-xs font-medium text-green-600">
+                      {selectedUsersToAdd.length} to add
+                    </span>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      fetchAvailableUsers(1, searchTerm, toggleStaff ? "user" : "staff");
+                      setToggleStaff(!toggleStaff);
+                    }}
+                    disabled={usersLoading}
+                    className="h-7 text-xs px-2"
+                  >
+                    {toggleStaff ? 'Show Users' : 'Show Staff'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Search */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or phone..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
+
+              <div className="flex-1 border rounded-lg overflow-hidden">
+                {usersLoading ? (
+                  <div className="flex items-center justify-center h-48">
+                    <BouncingBalls balls={4} className="fill-muted-foreground stroke-muted-foreground" animation="animate-bounce-md" />
+                  </div>
+                ) : availableUsers.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+                    <p className="text-sm">
+                      {searchTerm ? 'No results' : `No ${toggleStaff ? 'staff' : 'users'} available`}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y max-h-[400px] overflow-y-auto">
+                    {availableUsers.map((user) => {
+                      const isSelected = selectedUsersToAdd.includes(user.id);
+                      const isMember = currentMembersIds.includes(user.id);
+
+                      return (
+                        <div
+                          key={user.id}
+                          className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                            isSelected ? 'bg-primary/5' : 'hover:bg-muted/30'
+                          } ${isMember ? 'opacity-50' : ''}`}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {user.name?.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-medium truncate block">{user.name}</span>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {user.phone}{user.email ? ` · ${user.email}` : ''}
+                            </p>
+                          </div>
+
+                          {user.role === 'staff' && (
+                            <Badge variant="blue" className="text-[10px] px-1.5 py-0 shrink-0">
+                              staff
+                            </Badge>
+                          )}
+
+                          <button
+                            onClick={() => handleUserToggle(user.id, 'add')}
+                            disabled={loading || isMember}
+                            className={`shrink-0 p-1.5 rounded-md transition-colors disabled:opacity-50 ${
+                              isSelected
+                                ? 'bg-primary text-white'
+                                : isMember
+                                  ? 'bg-muted text-muted-foreground'
+                                  : 'hover:bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            {isMember ? (
+                              <Check className="h-3.5 w-3.5" />
+                            ) : isSelected ? (
+                              <Check className="h-3.5 w-3.5" />
+                            ) : (
+                              <UserPlus className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-1 mt-3">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || usersLoading}
+                    className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-xs text-muted-foreground px-2">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || usersLoading}
+                    className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
                 </div>
               )}
-            </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1 || usersLoading}
-                >
-                  ← Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNum = i + 1;
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handlePageChange(pageNum)}
-                        disabled={usersLoading}
-                        className="w-8 h-8 p-0"
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages || usersLoading}
-                >
-                  Next →
-                </Button>
-              </div>
-            )}
-
-            {selectedUsersToAdd.length > 0 && selectedUsersToRemove.length === 0 && (
-              <div className="mt-4">
+              {selectedUsersToAdd.length > 0 && selectedUsersToRemove.length === 0 && (
                 <Button
                   onClick={handleAddMembers}
                   disabled={loading}
-                  className="w-full h-10"
-                  size="lg"
+                  className="mt-3 h-9"
+                  size="sm"
                 >
-                  {loading ? 'Adding...' : `Add ${selectedUsersToAdd.length} Selected User${selectedUsersToAdd.length > 1 ? 's' : ''}`}
+                  {loading ? 'Adding...' : `Add ${selectedUsersToAdd.length} Member${selectedUsersToAdd.length > 1 ? 's' : ''}`}
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Selected Users Summary */}
-        {(selectedUsersToAdd.length > 0 || selectedUsersToRemove.length > 0) && (
-          <div className="mt-6 p-4 border rounded-lg bg-muted/30">
-            <h4 className="font-semibold mb-3 text-base">Pending Changes:</h4>
-            <div className="space-y-3">
-              {selectedUsersToAdd.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span className="text-green-700 font-medium">Adding {selectedUsersToAdd.length} user{selectedUsersToAdd.length > 1 ? 's' : ''}</span>
+        {/* Footer */}
+        {hasChanges && (
+          <div className="px-6 py-4 border-t bg-muted/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-xs">
+                {selectedUsersToAdd.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                    <span className="text-green-700">
+                      Adding {selectedUsersToAdd.length}: {selectedUsersToAdd.map(id => {
+                        const user = [...currentMembers, ...availableUsers].find(u => u.id === id);
+                        return user?.name || `#${id}`;
+                      }).join(', ')}
+                    </span>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUsersToAdd.map(userId => {
-                      const user = [...currentMembers, ...availableUsers].find(u => u.id === userId);
-                      return (
-                        <Badge key={userId} variant="outline" className="text-green-700 border-green-300 bg-green-50">
-                          {user?.name || `User ${userId}`}
-                        </Badge>
-                      );
-                    })}
+                )}
+                {selectedUsersToRemove.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    <span className="text-red-700">
+                      Removing {selectedUsersToRemove.length}: {selectedUsersToRemove.map(id => {
+                        const user = currentMembers.find(u => u.id === id);
+                        return user?.name || `#${id}`;
+                      }).join(', ')}
+                    </span>
                   </div>
-                </div>
-              )}
-              {selectedUsersToRemove.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-red-700 font-medium">Removing {selectedUsersToRemove.length} user{selectedUsersToRemove.length > 1 ? 's' : ''}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUsersToRemove.map(userId => {
-                      const user = currentMembers.find(u => u.id === userId);
-                      return (
-                        <Badge key={userId} variant="outline" className="text-red-700 border-red-300 bg-red-50">
-                          {user?.name || `User ${userId}`}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {selectedUsersToRemove.length > 0 && selectedUsersToAdd.length > 0 && (
+                  <Button
+                    onClick={handleMakeChanges}
+                    disabled={loading}
+                    size="sm"
+                    className="h-8"
+                  >
+                    {loading ? 'Applying...' : 'Apply All Changes'}
+                  </Button>
+                )}
+                <Button variant="ghost" onClick={onClose} disabled={loading} size="sm" className="h-8">
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
         )}
 
-        <DialogFooter className="pt-4">
-          {
-            selectedUsersToRemove.length > 0 && selectedUsersToAdd.length > 0 &&
-            <Button variant="outline" onClick={handleMakeChanges} disabled={loading} size="lg" className='bg-green-500 text-white hover:bg-green-600 hover:text-white cursor-pointer font-semibold'>
-              Make Changes
+        {!hasChanges && (
+          <div className="px-6 py-3 border-t flex justify-end">
+            <Button variant="ghost" onClick={onClose} size="sm" className="h-8">
+              Close
             </Button>
-          }
-          <Button variant="outline" onClick={onClose} disabled={loading} size="lg" className='cursor-pointer'>
-            Cancel
-          </Button>
-        </DialogFooter>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
-
