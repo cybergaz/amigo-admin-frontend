@@ -586,8 +586,7 @@ class ApiClient {
   // Signup Requests Management APIs
   async getSignupRequests(): Promise<ApiResponse<Array<{
     id: number;
-    first_name: string;
-    last_name: string;
+    name: string;
     phone: string;
     status: string;
     rejected_reason: string | null;
@@ -605,14 +604,12 @@ class ApiClient {
 
   async updateSignupRequestStatus(data: {
     phone: string;
-    first_name: string;
-    last_name: string;
+    name?: string;
     status?: string;
     rejected_reason?: string;
   }): Promise<ApiResponse<{
     id: number;
-    first_name: string;
-    last_name: string;
+    name: string;
     phone: string;
     status: string;
     rejected_reason: string | null;

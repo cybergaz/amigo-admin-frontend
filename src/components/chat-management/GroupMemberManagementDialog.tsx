@@ -140,7 +140,7 @@ export function GroupMemberManagementDialog({
           members = data
             .map((member: any) => {
               if (member.user) {
-                return member.user
+                return member.user;
               } else if (member.userId && member.userName) {
                 return {
                   id: member.userId,
@@ -343,7 +343,7 @@ export function GroupMemberManagementDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-6xl sm:min-w-2xl md:min-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0">
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b">
           <DialogHeader>
@@ -399,11 +399,10 @@ export function GroupMemberManagementDialog({
                       return (
                         <div
                           key={member.id}
-                          className={`flex items-center gap-3 px-4 py-3 transition-colors ${
-                            isMarkedForRemoval
-                              ? 'bg-red-50'
-                              : 'hover:bg-muted/30'
-                          }`}
+                          className={`flex items-center gap-3 px-4 py-3 transition-colors ${isMarkedForRemoval
+                            ? 'bg-red-50'
+                            : 'hover:bg-muted/30'
+                            }`}
                         >
                           {/* Avatar */}
                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -483,11 +482,10 @@ export function GroupMemberManagementDialog({
                                 <button
                                   onClick={() => { handleUserToggle(member.id, 'remove'); setOpenDropdownId(null); }}
                                   disabled={loading || isCreator}
-                                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left disabled:opacity-50 ${
-                                    isMarkedForRemoval
-                                      ? 'text-blue-600 hover:bg-blue-50'
-                                      : 'text-red-600 hover:bg-red-50'
-                                  }`}
+                                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left disabled:opacity-50 ${isMarkedForRemoval
+                                    ? 'text-blue-600 hover:bg-blue-50'
+                                    : 'text-red-600 hover:bg-red-50'
+                                    }`}
                                 >
                                   {isMarkedForRemoval ? <X className="h-3.5 w-3.5" /> : <UserMinus className="h-3.5 w-3.5" />}
                                   {isMarkedForRemoval ? 'Cancel Removal' : 'Remove'}
@@ -578,9 +576,8 @@ export function GroupMemberManagementDialog({
                       return (
                         <div
                           key={user.id}
-                          className={`flex items-center gap-3 px-4 py-3 transition-colors ${
-                            isSelected ? 'bg-primary/5' : 'hover:bg-muted/30'
-                          } ${isMember ? 'opacity-50' : ''}`}
+                          className={`flex items-center gap-3 px-4 py-3 transition-colors ${isSelected ? 'bg-primary/5' : 'hover:bg-muted/30'
+                            } ${isMember ? 'opacity-50' : ''}`}
                         >
                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                             <span className="text-xs font-medium text-muted-foreground">
@@ -604,13 +601,12 @@ export function GroupMemberManagementDialog({
                           <button
                             onClick={() => handleUserToggle(user.id, 'add')}
                             disabled={loading || isMember}
-                            className={`shrink-0 p-1.5 rounded-md transition-colors disabled:opacity-50 ${
-                              isSelected
-                                ? 'bg-primary text-white'
-                                : isMember
-                                  ? 'bg-muted text-muted-foreground'
-                                  : 'hover:bg-muted text-muted-foreground'
-                            }`}
+                            className={`shrink-0 p-1.5 rounded-md transition-colors disabled:opacity-50 ${isSelected
+                              ? 'bg-primary text-white'
+                              : isMember
+                                ? 'bg-muted text-muted-foreground'
+                                : 'hover:bg-muted text-muted-foreground'
+                              }`}
                           >
                             {isMember ? (
                               <Check className="h-3.5 w-3.5" />

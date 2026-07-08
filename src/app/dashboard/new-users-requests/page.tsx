@@ -16,8 +16,7 @@ import BouncingBalls from "@/components/ui/bouncing-balls";
 
 interface SignupRequest {
   id: number;
-  first_name: string;
-  last_name: string;
+  name: string;
   phone: string;
   status: string;
   rejected_reason: string | null;
@@ -53,7 +52,7 @@ export default function NewUsersRequests() {
   };
 
   const handleApprove = async (request: SignupRequest) => {
-    if (!confirm(`Are you sure you want to approve ${request.first_name} ${request.last_name}'s signup request?`)) {
+    if (!confirm(`Are you sure you want to approve ${request.name}'s signup request?`)) {
       return;
     }
 
@@ -61,8 +60,7 @@ export default function NewUsersRequests() {
       setIsProcessing(true);
       const response = await api_client.updateSignupRequestStatus({
         phone: request.phone,
-        first_name: request.first_name,
-        last_name: request.last_name,
+        name: request.name,
         status: "accepted",
       });
 
@@ -97,8 +95,7 @@ export default function NewUsersRequests() {
       setIsProcessing(true);
       const response = await api_client.updateSignupRequestStatus({
         phone: selectedRequest.phone,
-        first_name: selectedRequest.first_name,
-        last_name: selectedRequest.last_name,
+        name: selectedRequest.name,
         status: "rejected",
         rejected_reason: rejectReason.trim(),
       });
@@ -210,7 +207,7 @@ export default function NewUsersRequests() {
                   {requests.map((request) => (
                     <TableRow key={request.id}>
                       <TableCell className="font-medium">
-                        {request.first_name} {request.last_name}
+                        {request.name}
                       </TableCell>
                       <TableCell>{request.phone}</TableCell>
                       <TableCell>{getStatusBadge(request.status)}</TableCell>
@@ -271,7 +268,7 @@ export default function NewUsersRequests() {
           <DialogHeader>
             <DialogTitle>Reject Signup Request</DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting {selectedRequest?.first_name} {selectedRequest?.last_name}'s signup request.
+              Please provide a reason for rejecting {selectedRequest?.name}'s signup request.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
