@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, Users, MessageSquare, Settings, LayoutDashboard, Bell, UserCheck, UserPlus, Megaphone } from "lucide-react";
+import { Shield, Users, MessageSquare, Settings, LayoutDashboard, Bell, UserCheck, UserPlus, Megaphone, ShieldAlert } from "lucide-react";
 import Header from "@/components/common/header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/animated-shadcn-tabs";
 import Link from "next/link";
@@ -53,6 +53,7 @@ export default function DashboardLayout({
     if (pathname === "/dashboard/admin-management") return "admins";
     if (pathname === "/dashboard/new-users-requests") return "new-users";
     if (pathname === "/dashboard/marquee-banner") return "marquee-banner";
+    if (pathname === "/dashboard/admin-pin-usage") return "admin-pin-usage";
     return "dashboard"; // fallback to dashboard
   };
 
@@ -132,6 +133,16 @@ export default function DashboardLayout({
               <Link href={"/dashboard/marquee-banner"} className="flex items-center gap-2">
                 <Megaphone className="w-4 h-4" />
                 Marquee Banner
+              </Link>
+            </TabsTrigger>
+          )}
+          {/* Super-admin only — Admin PIN (camouflage/duress) usage history */}
+          {userPermissions?.role === "admin" && (
+            <TabsTrigger value="admin-pin-usage" asChild
+              className="px-8 data-[state=active]:text-accent-rblue-dark text-accent-gray flex items-center gap-2">
+              <Link href={"/dashboard/admin-pin-usage"} className="flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4" />
+                Admin PIN Usage
               </Link>
             </TabsTrigger>
           )}

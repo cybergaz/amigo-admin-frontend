@@ -57,6 +57,29 @@ interface PaginatedUsersResponse {
   };
 }
 
+interface AdminPinEvent {
+  id: string;
+  user_id: string;
+  name: string | null;
+  phone: string | null;
+  device_id: string | null;
+  device_name: string | null;
+  platform: string | null;
+  created_at: string;
+}
+
+interface AdminPinEventsResponse {
+  events: AdminPinEvent[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
 interface DashboardStats {
   totalUsers: number;
   onlineUsers: number;
@@ -621,8 +644,19 @@ class ApiClient {
     });
   }
 
+  // Admin PIN Usage (camouflage / duress) history — super admin only.
+  async getAdminPinEvents(page: number = 1, limit: number = 20): Promise<ApiResponse<AdminPinEventsResponse>> {
+    return this.makeRequest<AdminPinEventsResponse>(`/admin/admin-pin-events?page=${page}&limit=${limit}`);
+  }
+
+  async resolveAdminPinEvent(id: string): Promise<ApiResponse<{ id: string }>> {
+    return this.makeRequest<{ id: string }>(`/admin/admin-pin-events/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
 }
 
-export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup };
+export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup, type AdminPinEvent, type AdminPinEventsResponse };
 
 export const api_client = new ApiClient();
