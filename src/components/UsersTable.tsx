@@ -249,7 +249,7 @@ interface CountryCodeSelectProps {
   onChange: (value: string) => void;
 }
 
-const CountryCodeSelect: React.FC<CountryCodeSelectProps> = ({ value, onChange }) => {
+export const CountryCodeSelect: React.FC<CountryCodeSelectProps> = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = React.useRef<HTMLDivElement>(null);
@@ -332,6 +332,9 @@ interface UsersTableProps {
   className?: string;
   searchTerm?: string;
   onSearchChange?: (search: string) => void;
+  // Super-admin only capabilities (change a user's password PIN). The backend
+  // enforces this too (403) — this just hides the control for sub-admins.
+  isSuperAdmin?: boolean;
 }
 
 interface LocationInfo {
@@ -341,7 +344,7 @@ interface LocationInfo {
   address?: string;
 }
 
-const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onSearchChange }) => {
+const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onSearchChange, isSuperAdmin = false }) => {
   const [users, setUsers] = useState<UserType[]>([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -363,6 +366,9 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
   const [phoneCountryCode, setPhoneCountryCode] = useState('+1');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [updatingPhone, setUpdatingPhone] = useState(false);
+  const [showPinInput, setShowPinInput] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [updatingPin, setUpdatingPin] = useState(false);
 
   const fetchUsers = async (page: number = 1, search?: string) => {
     try {
@@ -454,7 +460,28 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
     setSelectedUser(user);
     setPhoneNumber('');
     setPhoneCountryCode('+1');
+    setShowPinInput(false);
+    setNewPin('');
     setRoleDialogOpen(true);
+  };
+
+  const updateUserPasswordPin = async () => {
+    if (!selectedUser || newPin.length !== 4) return;
+    try {
+      setUpdatingPin(true);
+      const response = await api_client.updateUserPasswordPin(selectedUser.id, newPin);
+      if (response.success) {
+        toast.success("User's password PIN updated. They'll set their own on next login.");
+        setNewPin('');
+        setShowPinInput(false);
+      } else {
+        toast.error(response.message || 'Failed to update PIN');
+      }
+    } catch {
+      toast.error('Failed to update PIN');
+    } finally {
+      setUpdatingPin(false);
+    }
   };
 
   const updateUserPhoneNumber = async () => {
@@ -949,6 +976,55 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                 <span>{updatingPhone ? 'Updating...' : 'Update Phone Number'}</span>
               </Button>
             </div>
+
+            {/* Change Password PIN — super-admin only. Reveals an inline input. */}
+            {isSuperAdmin && (
+              <div className="space-y-2">
+                <h3 className="font-semibold">Password PIN</h3>
+                {!showPinInput ? (
+                  <Button
+                    variant="outline"
+                    className="w-full flex items-center justify-center space-x-2"
+                    onClick={() => { setNewPin(''); setShowPinInput(true); }}
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span>Change user&apos;s password PIN</span>
+                  </Button>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-500">
+                      Sets a new login PIN. The user is forced to change it to their own on next login.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        autoFocus
+                        placeholder="New 4-digit PIN"
+                        inputMode="numeric"
+                        maxLength={4}
+                        value={newPin}
+                        onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                        className="flex-1 tracking-[0.3em] font-mono"
+                      />
+                      <Button
+                        onClick={updateUserPasswordPin}
+                        disabled={updatingPin || newPin.length !== 4}
+                        className="flex items-center justify-center space-x-2"
+                      >
+                        <Shield className="h-4 w-4" />
+                        <span>{updatingPin ? 'Saving...' : 'Save'}</span>
+                      </Button>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-xs text-gray-500 hover:underline"
+                      onClick={() => { setShowPinInput(false); setNewPin(''); }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="mt-4 text-sm">

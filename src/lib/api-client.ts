@@ -80,6 +80,63 @@ interface AdminPinEventsResponse {
   };
 }
 
+interface PinResetRequest {
+  id: string;
+  user_id: string;
+  name: string | null;
+  phone: string | null;
+  status: string;
+  resolved_at: string | null;
+  created_at: string;
+}
+
+interface PinResetRequestsResponse {
+  requests: PinResetRequest[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+interface DeviceChangeRequest {
+  id: string;
+  user_id: string;
+  name: string | null;
+  phone: string | null;
+  current_device_id: string | null;
+  current_device_name: string | null;
+  requested_device_id: string | null;
+  device_name: string | null;
+  platform: string | null;
+  reason: string | null;
+  status: string;
+  review_note: string | null;
+  reviewed_at: string | null;
+  consumed_at: string | null;
+  created_at: string;
+}
+
+interface DeviceChangeRequestsResponse {
+  requests: DeviceChangeRequest[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+interface SingleDeviceLock {
+  enabled: boolean;
+  updated_at: string | null;
+}
+
 interface DashboardStats {
   totalUsers: number;
   onlineUsers: number;
@@ -625,6 +682,34 @@ class ApiClient {
     });
   }
 
+  // ── User provisioning + PIN management (super-admin only) ───────────────────
+  async createUser(name: string, phone: string, password_pin: string): Promise<ApiResponse<{ id: string; name: string; phone: string; role: string; created_at: string }>> {
+    return this.makeRequest('/admin/create-user', {
+      method: 'POST',
+      body: JSON.stringify({ name, phone, password_pin }),
+    });
+  }
+
+  async updateUserPasswordPin(user_id: number | string, pin: string): Promise<ApiResponse<{ id: string }>> {
+    return this.makeRequest<{ id: string }>('/admin/user/set-password-pin', {
+      method: 'POST',
+      body: JSON.stringify({ user_id, pin }),
+    });
+  }
+
+  async getPinResetRequests(page: number = 1, limit: number = 20, status?: string): Promise<ApiResponse<PinResetRequestsResponse>> {
+    const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) query.set('status', status);
+    return this.makeRequest<PinResetRequestsResponse>(`/admin/pin-reset-requests?${query.toString()}`);
+  }
+
+  async resolvePinResetRequest(id: string, status: 'accepted' | 'rejected' = 'rejected'): Promise<ApiResponse<{ id: string }>> {
+    return this.makeRequest<{ id: string }>(`/admin/pin-reset-requests/${id}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+    });
+  }
+
   async updateSignupRequestStatus(data: {
     phone: string;
     name?: string;
@@ -655,8 +740,47 @@ class ApiClient {
     });
   }
 
+  // Device-change requests — approvable by super-admin and sub-admins.
+  async getDeviceChangeRequests(
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+  ): Promise<ApiResponse<DeviceChangeRequestsResponse>> {
+    const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) query.set('status', status);
+    return this.makeRequest<DeviceChangeRequestsResponse>(
+      `/admin/device-change-requests?${query.toString()}`,
+    );
+  }
+
+  async approveDeviceChangeRequest(id: string): Promise<ApiResponse<{ id: string }>> {
+    return this.makeRequest<{ id: string }>(
+      `/admin/device-change-requests/${id}/approve`,
+      { method: 'POST' },
+    );
+  }
+
+  async denyDeviceChangeRequest(id: string, reason?: string): Promise<ApiResponse<{ id: string }>> {
+    return this.makeRequest<{ id: string }>(
+      `/admin/device-change-requests/${id}/deny`,
+      { method: 'POST', body: JSON.stringify({ reason }) },
+    );
+  }
+
+  // Global single-device-lock kill-switch — super-admin only.
+  async getSingleDeviceLock(): Promise<ApiResponse<SingleDeviceLock>> {
+    return this.makeRequest<SingleDeviceLock>('/admin/single-device-lock');
+  }
+
+  async setSingleDeviceLock(enabled: boolean): Promise<ApiResponse<SingleDeviceLock>> {
+    return this.makeRequest<SingleDeviceLock>('/admin/single-device-lock', {
+      method: 'PUT',
+      body: JSON.stringify({ enabled }),
+    });
+  }
+
 }
 
-export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup, type AdminPinEvent, type AdminPinEventsResponse };
+export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup, type AdminPinEvent, type AdminPinEventsResponse, type DeviceChangeRequest, type DeviceChangeRequestsResponse, type SingleDeviceLock, type PinResetRequest, type PinResetRequestsResponse };
 
 export const api_client = new ApiClient();

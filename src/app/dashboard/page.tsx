@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import UsersTable from '@/components/UsersTable';
+import CreateUserDialog from '@/components/CreateUserDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, Shield, Phone } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, UserCheck, Shield, Phone, UserPlus, KeyRound } from 'lucide-react';
 import { api_client } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -23,6 +26,8 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const fetchDashboardStats = async () => {
     try {
@@ -43,6 +48,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardStats();
+    (async () => {
+      const res = await api_client.getUserPermissions();
+      if (res.success && res.data) setIsSuperAdmin(res.data.role === 'admin');
+    })();
   }, []);
 
   const statsCards = [
@@ -111,9 +120,40 @@ export default function Dashboard() {
           })}
         </div>
 
+        {/* Super-admin user-management toolbar */}
+        {isSuperAdmin && (
+          <div className="flex flex-wrap items-center justify-end gap-3 mb-4">
+            <Link href="/dashboard/pin-reset-requests">
+              <Button variant="outline" className="flex items-center gap-2">
+                <KeyRound className="h-4 w-4" />
+                Reset-PIN Requests
+              </Button>
+            </Link>
+            <Button className="flex items-center gap-2" onClick={() => setCreateOpen(true)}>
+              <UserPlus className="h-4 w-4" />
+              Create New User
+            </Button>
+          </div>
+        )}
+
         {/* Users Table with Search */}
-        <UsersTable searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+        <UsersTable
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          isSuperAdmin={isSuperAdmin}
+        />
       </div>
+
+      <CreateUserDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(name) => {
+          fetchDashboardStats();
+          // The list is oldest-first, so a fresh user is on the last page — filter
+          // the table to their name so the admin sees the account they just made.
+          setSearchTerm(name);
+        }}
+      />
     </div>
   );
 }
