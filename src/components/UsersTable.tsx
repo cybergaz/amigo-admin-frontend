@@ -369,6 +369,9 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
   const [showPinInput, setShowPinInput] = useState(false);
   const [newPin, setNewPin] = useState('');
   const [updatingPin, setUpdatingPin] = useState(false);
+  const [showAdminPinInput, setShowAdminPinInput] = useState(false);
+  const [newAdminPin, setNewAdminPin] = useState('');
+  const [updatingAdminPin, setUpdatingAdminPin] = useState(false);
 
   const fetchUsers = async (page: number = 1, search?: string) => {
     try {
@@ -462,7 +465,28 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
     setPhoneCountryCode('+1');
     setShowPinInput(false);
     setNewPin('');
+    setShowAdminPinInput(false);
+    setNewAdminPin('');
     setRoleDialogOpen(true);
+  };
+
+  const updateUserAdminPin = async () => {
+    if (!selectedUser || newAdminPin.length !== 4) return;
+    try {
+      setUpdatingAdminPin(true);
+      const response = await api_client.updateUserAdminPin(selectedUser.id, newAdminPin);
+      if (response.success) {
+        toast.success("User's admin PIN updated");
+        setNewAdminPin('');
+        setShowAdminPinInput(false);
+      } else {
+        toast.error(response.message || 'Failed to update admin PIN');
+      }
+    } catch {
+      toast.error('Failed to update admin PIN');
+    } finally {
+      setUpdatingAdminPin(false);
+    }
   };
 
   const updateUserPasswordPin = async () => {
@@ -1018,6 +1042,55 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                       type="button"
                       className="text-xs text-gray-500 hover:underline"
                       onClick={() => { setShowPinInput(false); setNewPin(''); }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Change / override Admin PIN — super-admin only. */}
+            {isSuperAdmin && (
+              <div className="space-y-2">
+                <h3 className="font-semibold">Admin PIN (decoy)</h3>
+                {!showAdminPinInput ? (
+                  <Button
+                    variant="outline"
+                    className="w-full flex items-center justify-center space-x-2"
+                    onClick={() => { setNewAdminPin(''); setShowAdminPinInput(true); }}
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span>Set / override user&apos;s admin PIN</span>
+                  </Button>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-500">
+                      The app-lock decoy PIN. Must differ from the user&apos;s login PIN.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        autoFocus
+                        placeholder="New 4-digit admin PIN"
+                        inputMode="numeric"
+                        maxLength={4}
+                        value={newAdminPin}
+                        onChange={(e) => setNewAdminPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                        className="flex-1 tracking-[0.3em] font-mono"
+                      />
+                      <Button
+                        onClick={updateUserAdminPin}
+                        disabled={updatingAdminPin || newAdminPin.length !== 4}
+                        className="flex items-center justify-center space-x-2"
+                      >
+                        <Shield className="h-4 w-4" />
+                        <span>{updatingAdminPin ? 'Saving...' : 'Save'}</span>
+                      </Button>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-xs text-gray-500 hover:underline"
+                      onClick={() => { setShowAdminPinInput(false); setNewAdminPin(''); }}
                     >
                       Cancel
                     </button>

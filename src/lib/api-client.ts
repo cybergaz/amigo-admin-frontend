@@ -697,6 +697,13 @@ class ApiClient {
     });
   }
 
+  async updateUserAdminPin(user_id: number | string, pin: string): Promise<ApiResponse<{ id: string }>> {
+    return this.makeRequest<{ id: string }>('/admin/user/set-admin-pin', {
+      method: 'POST',
+      body: JSON.stringify({ user_id, pin }),
+    });
+  }
+
   async getPinResetRequests(page: number = 1, limit: number = 20, status?: string): Promise<ApiResponse<PinResetRequestsResponse>> {
     const query = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (status) query.set('status', status);
