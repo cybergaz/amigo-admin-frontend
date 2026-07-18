@@ -11,6 +11,7 @@ import { CheckCircle, XCircle, Clock, Smartphone, MonitorSmartphone } from "luci
 import { api_client, type DeviceChangeRequest } from "@/lib/api-client";
 import { toast } from "sonner";
 import BouncingBalls from "@/components/ui/bouncing-balls";
+import { PageShell } from "@/components/common/page-shell";
 
 const LIMIT = 20;
 
@@ -175,18 +176,18 @@ export default function DeviceRequests() {
 
   if (loading && requests.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <BouncingBalls balls={4} className="fill-black stroke-black" animation="animate-bounce-md" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+    <PageShell className="py-4 sm:py-6 space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <MonitorSmartphone className="w-7 h-7 text-accent-rblue-dark" />
+            <MonitorSmartphone className="w-7 h-7 shrink-0 text-accent-rblue-dark" />
             Device Change Requests
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -194,7 +195,7 @@ export default function DeviceRequests() {
             user logs in on the new device and the old device is signed out automatically.
           </p>
         </div>
-        <Button onClick={() => fetchRequests(page)} variant="outline">
+        <Button onClick={() => fetchRequests(page)} variant="outline" className="sm:shrink-0">
           Refresh
         </Button>
       </div>
@@ -202,8 +203,8 @@ export default function DeviceRequests() {
       {/* Kill-switch — super-admin only */}
       {isSuperAdmin && (
         <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="flex flex-col">
+          <CardContent className="flex items-start justify-between gap-4 p-4">
+            <div className="flex min-w-0 flex-col">
               <span className="font-medium">Enforce single-device lock</span>
               <span className="text-sm text-accent-gray">
                 When off, a new device silently takes over on login (legacy behaviour) and
@@ -216,15 +217,21 @@ export default function DeviceRequests() {
               aria-checked={lockEnabled}
               disabled={savingLock}
               onClick={toggleLock}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-                lockEnabled ? "bg-accent-rblue-dark" : "bg-gray-300"
-              } ${savingLock ? "opacity-60" : ""}`}
+              className={`relative inline-flex h-11 min-w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-full px-2 ${
+                savingLock ? "opacity-60" : ""
+              }`}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                  lockEnabled ? "translate-x-5" : "translate-x-0.5"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  lockEnabled ? "bg-accent-rblue-dark" : "bg-gray-300"
                 }`}
-              />
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                    lockEnabled ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </span>
             </button>
           </CardContent>
         </Card>
@@ -242,7 +249,7 @@ export default function DeviceRequests() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="hidden md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -274,8 +281,8 @@ export default function DeviceRequests() {
                             {requestedLabel(r)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="max-w-[220px]">
-                          <span className="text-sm text-muted-foreground line-clamp-2">
+                        <TableCell className="max-w-[220px] whitespace-normal">
+                          <span className="text-sm text-muted-foreground line-clamp-2 whitespace-normal break-words">
                             {r.reason || "-"}
                           </span>
                         </TableCell>
@@ -316,8 +323,79 @@ export default function DeviceRequests() {
                 </Table>
               </div>
 
+              {/* Mobile card fallback */}
+              <div className="md:hidden space-y-3">
+                {requests.map((r) => (
+                  <Card key={r.id}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="font-medium min-w-0 break-words">
+                          {r.name || <span className="text-muted-foreground">Unknown</span>}
+                        </h3>
+                        <div className="shrink-0">{statusBadge(r)}</div>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground shrink-0">Phone</span>
+                          <span className="min-w-0 break-words text-right">{r.phone || "-"}</span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground shrink-0">From</span>
+                          <span className="min-w-0 break-words text-right">{r.current_device_name || "-"}</span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground shrink-0">To (requested)</span>
+                          <span className="min-w-0 text-right">
+                            <Badge variant="secondary" className="font-normal">
+                              <Smartphone className="w-3 h-3 mr-1" />
+                              {requestedLabel(r)}
+                            </Badge>
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground shrink-0">Requested</span>
+                          <span className="min-w-0 break-words text-right">{formatDate(r.created_at)}</span>
+                        </div>
+                      </div>
+                      {r.reason && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Reason</span>
+                          <p className="break-words">{r.reason}</p>
+                        </div>
+                      )}
+                      {r.status.toLowerCase() === "pending" ? (
+                        <div className="flex flex-col gap-2 pt-1">
+                          <Button
+                            onClick={() => setConfirmApprove(r)}
+                            disabled={processingId === r.id}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => {
+                              setDenyTarget(r);
+                              setDenyReason("");
+                            }}
+                            disabled={processingId === r.id}
+                            className="w-full"
+                          >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Deny
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Reviewed</span>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
                   <span className="text-sm text-muted-foreground">
                     Page {page} of {totalPages}
                   </span>
@@ -422,6 +500,6 @@ export default function DeviceRequests() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

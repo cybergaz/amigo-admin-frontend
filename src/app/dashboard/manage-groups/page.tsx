@@ -16,6 +16,7 @@ import GroupEditDialog from '@/components/group-management/GroupEditDialog';
 import GroupEditDetailsDialog from '@/components/group-management/GroupEditDetailsDialog';
 import GroupAddToCommunitiesDialog from '@/components/group-management/GroupAddToCommunitiesDialog';
 import BouncingBalls from '@/components/ui/bouncing-balls';
+import { PageShell } from '@/components/common/page-shell';
 
 interface CommunityWithGroups extends Community {
   groups?: CommunityGroup[];
@@ -174,9 +175,9 @@ export default function ManageGroups() {
 
   const renderCommunitiesTab = () => (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Communities</h2>
-        <Button onClick={() => setShowCreateCommunity(true)}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <h2 className="text-2xl font-bold break-words">Communities</h2>
+        <Button className="w-full sm:w-auto" onClick={() => setShowCreateCommunity(true)}>
           Create Community
         </Button>
       </div>
@@ -185,14 +186,14 @@ export default function ManageGroups() {
         {communities.map((community) => (
           <Card key={community.id}>
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle>{community.name}</CardTitle>
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
+                <div className="min-w-0">
+                  <CardTitle className="break-words">{community.name}</CardTitle>
                   <CardDescription>
                     Created: {new Date(community.created_at).toLocaleDateString()}
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -237,14 +238,14 @@ export default function ManageGroups() {
                     <h4 className="font-medium mb-2">Groups:</h4>
                     <div className="space-y-2">
                       {community.groups.map((group) => (
-                        <div key={group.id} className="flex justify-between items-center p-2 border rounded-lg">
-                          <div>
-                            <span className="font-medium">{group.title}</span>
+                        <div key={group.id} className="flex flex-col gap-2 p-2 border rounded-lg sm:flex-row sm:justify-between sm:items-center">
+                          <div className="min-w-0">
+                            <span className="font-medium break-words">{group.title}</span>
                             <div className="text-sm text-muted-foreground">
                               Created: {new Date(group.created_at).toLocaleDateString()}
                             </div>
                           </div>
-                          <div className="flex gap-1">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               variant="outline"
                               size="sm"
@@ -291,9 +292,9 @@ export default function ManageGroups() {
 
   const renderGroupsTab = () => (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Standalone Groups</h2>
-        <Button onClick={() => setShowCreateGroup(true)}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <h2 className="text-2xl font-bold break-words">Standalone Groups</h2>
+        <Button className="w-full sm:w-auto" onClick={() => setShowCreateGroup(true)}>
           Create Group
         </Button>
       </div>
@@ -302,14 +303,14 @@ export default function ManageGroups() {
         {standaloneGroups.map((group) => (
           <Card key={group.id}>
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle>{group.title}</CardTitle>
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
+                <div className="min-w-0">
+                  <CardTitle className="break-words">{group.title}</CardTitle>
                   <CardDescription>
                     Created: {new Date(group.created_at).toLocaleDateString()}
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -357,7 +358,7 @@ export default function ManageGroups() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
           <BouncingBalls balls={4} className=" fill-black stroke-black" animation="animate-bounce-md" />
         </div>
@@ -366,19 +367,20 @@ export default function ManageGroups() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
+    <PageShell className="py-4 sm:py-6">
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className='flex items-center justify-between'>
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold">Group Management</h1>
+          <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold">Group Management</h1>
               <p className="text-muted-foreground">Manage communities and groups</p>
             </div>
-            <TabsList className="flex ">
-              <TabsTrigger value="communities">Communities</TabsTrigger>
-              <TabsTrigger value="groups">Standalone Groups</TabsTrigger>
-            </TabsList>
+            <div className="-mx-1 overflow-x-auto no-scrollbar px-1">
+              <TabsList className="flex w-full md:w-auto">
+                <TabsTrigger value="communities">Communities</TabsTrigger>
+                <TabsTrigger value="groups">Standalone Groups</TabsTrigger>
+              </TabsList>
+            </div>
           </div>
           <TabsContent value="communities" className="mt-6">
             {renderCommunitiesTab()}
@@ -387,7 +389,6 @@ export default function ManageGroups() {
             {renderGroupsTab()}
           </TabsContent>
         </Tabs>
-      </div>
 
       {/* Create Community Dialog */}
       <Dialog open={showCreateCommunity} onOpenChange={setShowCreateCommunity}>
@@ -463,7 +464,7 @@ export default function ManageGroups() {
                 placeholder="Enter group title"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className='flex flex-col gap-2'>
                 <Label htmlFor="start-time">Start Time</Label>
                 <Input
@@ -523,6 +524,6 @@ export default function ManageGroups() {
         onSave={fetchData}
       />
 
-    </div>
+    </PageShell>
   );
 }

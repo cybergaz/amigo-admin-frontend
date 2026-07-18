@@ -90,7 +90,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
@@ -149,17 +149,17 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
         ) : (
           <div className="space-y-3 py-2">
             <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm border border-gray-200">
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-600">Name</span>
-                <span className="font-semibold">{name.trim()}</span>
+              <div className="flex justify-between gap-3 min-w-0">
+                <span className="font-medium text-gray-600 shrink-0">Name</span>
+                <span className="font-semibold min-w-0 text-right break-words">{name.trim()}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-600">Phone</span>
-                <span className="font-mono">{fullPhone}</span>
+              <div className="flex justify-between gap-3 min-w-0">
+                <span className="font-medium text-gray-600 shrink-0">Phone</span>
+                <span className="font-mono min-w-0 text-right break-all">{fullPhone}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-600">Password PIN</span>
-                <span className="font-mono tracking-widest">{pin}</span>
+              <div className="flex justify-between gap-3 min-w-0">
+                <span className="font-medium text-gray-600 shrink-0">Password PIN</span>
+                <span className="font-mono tracking-widest min-w-0 text-right break-all">{pin}</span>
               </div>
             </div>
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-3">

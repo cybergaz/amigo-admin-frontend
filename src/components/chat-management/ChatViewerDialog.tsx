@@ -73,11 +73,11 @@ export function ChatViewerDialog({
           {!iconOnly && "View Details"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5" />
-            Chat Details - {conversationTitle}
+          <DialogTitle className="flex items-center gap-2 pr-8 text-base sm:text-lg">
+            <Eye className="h-5 w-5 shrink-0" />
+            <span className="truncate">Chat Details - {conversationTitle}</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -94,7 +94,7 @@ export function ChatViewerDialog({
               {/* Chat Overview */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${conversationType === "group" ? "bg-blue-500" :
+                  <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center ${conversationType === "group" ? "bg-blue-500" :
                     conversationType === "dm" ? "bg-purple-500" : "bg-green-500"
                     }`}>
                     <span className="text-white font-semibold">
@@ -102,14 +102,14 @@ export function ChatViewerDialog({
                         conversationType === "dm" ? "D" : "C"}
                     </span>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{conversationTitle}</h3>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-lg truncate">{conversationTitle}</h3>
                     <Badge variant="outline">{conversationType}</Badge>
                   </div>
                 </div>
 
                 {groupDetails?.group && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="p-3 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-700 font-medium">Created</p>
                       <p className="text-blue-900 text-sm">
@@ -181,21 +181,21 @@ export function ChatViewerDialog({
                       const joinedAt = member.joinedAt || member.joined_at;
 
                       return (
-                        <div key={userId} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                        <div key={userId} className="flex items-center justify-between gap-2 p-3 border rounded-lg">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="w-8 h-8 shrink-0 bg-gray-300 rounded-full flex items-center justify-center">
                               <span className="text-xs font-medium">
                                 {userName?.charAt(0) || "U"}
                               </span>
                             </div>
-                            <div>
-                              <p className="font-medium">{userName || `User ${userId}`}</p>
-                              <p className="text-xs text-muted-foreground">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium truncate">{userName || `User ${userId}`}</p>
+                              <p className="text-xs text-muted-foreground truncate">
                                 {userEmail || (joinedAt ? `Joined ${formatDate(joinedAt)}` : 'No info')}
                               </p>
                             </div>
                           </div>
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="shrink-0">
                             {member.role || "member"}
                           </Badge>
                         </div>

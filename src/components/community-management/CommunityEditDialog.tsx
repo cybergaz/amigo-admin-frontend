@@ -94,7 +94,7 @@ export default function CommunityEditDialog({ isOpen, onClose, community, onSave
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Community</DialogTitle>
           <DialogDescription>
@@ -127,7 +127,7 @@ export default function CommunityEditDialog({ isOpen, onClose, community, onSave
                 <p className="mt-2 text-sm text-muted-foreground">Loading groups...</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto border rounded-xl p-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 max-h-[40vh] sm:max-h-60 overflow-y-auto border rounded-xl p-3">
                 {availableGroups.map((group) => {
                   const isSelected = selectedGroups.includes(group.id);
                   return (
@@ -137,20 +137,20 @@ export default function CommunityEditDialog({ isOpen, onClose, community, onSave
                         }`}
                       onClick={() => handleGroupToggle(group.id)}
                     >
-                      <div>
-                        <span className="font-medium">{group.title}</span>
-                        <div className="text-sm text-muted-foreground">
+                      <div className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{group.title}</span>
+                        <div className="text-sm text-muted-foreground truncate">
                           Created: {new Date(group.created_at).toLocaleDateString()}
                         </div>
                       </div>
-                      <Badge variant={isSelected ? "default" : "outline"}>
+                      <Badge variant={isSelected ? "default" : "outline"} className="ml-2 shrink-0">
                         {isSelected ? "Selected" : "Available"}
                       </Badge>
                     </div>
                   );
                 })}
                 {availableGroups.length === 0 && (
-                  <div className="col-span-2 text-center py-8 text-muted-foreground">
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
                     No groups available
                   </div>
                 )}
@@ -164,7 +164,7 @@ export default function CommunityEditDialog({ isOpen, onClose, community, onSave
               <h4 className="font-medium mb-2">Selected Groups ({selectedGroups.length}):</h4>
               <div className="flex flex-wrap gap-2">
                 {selectedGroups.map(groupId => (
-                  <Badge key={groupId} variant="secondary" className='bg-white'>
+                  <Badge key={groupId} variant="secondary" className='bg-white max-w-full truncate'>
                     {getGroupTitle(groupId)}
                   </Badge>
                 ))}

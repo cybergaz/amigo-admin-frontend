@@ -123,14 +123,14 @@ export function MemberManagementDialog({
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b shrink-0">
           <DialogTitle>
             {mode === "add" ? "Add Members to" : "Remove Members from"} {groupTitle}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-4 space-y-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -156,21 +156,21 @@ export function MemberManagementDialog({
                       }`}
                     onClick={() => handleUserSelect(member.userId)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-8 h-8 shrink-0 bg-gray-300 rounded-full flex items-center justify-center">
                         <span className="text-xs font-medium">
                           {member.userName.charAt(0)}
                         </span>
                       </div>
-                      <div>
-                        <p className="font-medium">{member.userName}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{member.userName}</p>
                         <Badge variant="secondary" className="text-xs">
                           {member.role}
                         </Badge>
                       </div>
                     </div>
                     {selectedUsers.includes(member.userId) && (
-                      <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 shrink-0 bg-primary rounded-full flex items-center justify-center">
                         <X className="h-3 w-3 text-white" />
                       </div>
                     )}
@@ -203,19 +203,19 @@ export function MemberManagementDialog({
                         }`}
                       onClick={() => handleUserSelect(user.id)}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-8 h-8 shrink-0 bg-gray-300 rounded-full flex items-center justify-center">
                           <span className="text-xs font-medium">
                             {user.name.charAt(0)}
                           </span>
                         </div>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{user.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                         </div>
                       </div>
                       {selectedUsers.includes(user.id) && (
-                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                        <div className="w-5 h-5 shrink-0 bg-primary rounded-full flex items-center justify-center">
                           <X className="h-3 w-3 text-white" />
                         </div>
                       )}
@@ -234,29 +234,29 @@ export function MemberManagementDialog({
               </p>
             </div>
           )}
+        </div>
 
-          {/* Actions */}
-          <div className="flex gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setOpen(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAction}
-              disabled={selectedUsers.length === 0 || actionLoading}
-              className="flex-1"
-            >
-              {actionLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {mode === "add" ? "Adding..." : "Removing..."}
-                </>
-              ) : (
-                <>
-                  {mode === "add" ? "Add Members" : "Remove Members"}
-                </>
-              )}
-            </Button>
-          </div>
+        {/* Actions - pinned footer */}
+        <div className="shrink-0 flex flex-col-reverse sm:flex-row gap-2 px-4 sm:px-6 py-4 border-t">
+          <Button variant="outline" onClick={() => setOpen(false)} className="flex-1">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAction}
+            disabled={selectedUsers.length === 0 || actionLoading}
+            className="flex-1"
+          >
+            {actionLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                {mode === "add" ? "Adding..." : "Removing..."}
+              </>
+            ) : (
+              <>
+                {mode === "add" ? "Add Members" : "Remove Members"}
+              </>
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

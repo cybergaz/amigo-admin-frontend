@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PageShell } from "@/components/common/page-shell";
 import BouncingBalls from "@/components/ui/bouncing-balls";
 
 export default function MarqueeBannerPage() {
@@ -89,7 +90,7 @@ export default function MarqueeBannerPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <PageShell className="max-w-2xl py-4 sm:py-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -113,8 +114,8 @@ export default function MarqueeBannerPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex flex-col">
+          <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+            <div className="flex flex-col min-w-0">
               <span className="font-medium">Show banner</span>
               <span className="text-sm text-accent-gray">
                 When off, the banner is hidden in the app even if text is set.
@@ -125,7 +126,7 @@ export default function MarqueeBannerPage() {
               role="switch"
               aria-checked={enabled}
               onClick={() => setEnabled((v) => !v)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] ${
                 enabled ? "bg-accent-rblue-dark" : "bg-gray-300"
               }`}
             >
@@ -144,6 +145,6 @@ export default function MarqueeBannerPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

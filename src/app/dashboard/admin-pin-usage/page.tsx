@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle, ShieldAlert, Smartphone } from "lucide-react";
+import { PageShell } from "@/components/common/page-shell";
 import { api_client, type AdminPinEvent } from "@/lib/api-client";
 import { toast } from "sonner";
 import BouncingBalls from "@/components/ui/bouncing-balls";
@@ -90,25 +91,25 @@ export default function AdminPinUsage() {
 
   if (loading && events.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <BouncingBalls balls={4} className="fill-black stroke-black" animation="animate-bounce-md" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <ShieldAlert className="w-7 h-7 text-red-600" />
+    <PageShell className="py-4 sm:py-6 space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <ShieldAlert className="w-7 h-7 shrink-0 text-red-600" />
             Admin PIN Usage
           </h1>
           <p className="text-muted-foreground mt-1">
             Every time a user unlocked the app with their Admin PIN. Resolve an entry once handled.
           </p>
         </div>
-        <Button onClick={() => fetchEvents(page)} variant="outline">
+        <Button onClick={() => fetchEvents(page)} variant="outline" className="sm:shrink-0">
           Refresh
         </Button>
       </div>
@@ -125,8 +126,7 @@ export default function AdminPinUsage() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <Table>
+              <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
@@ -144,13 +144,22 @@ export default function AdminPinUsage() {
                           {event.name || <span className="text-muted-foreground">Unknown</span>}
                         </TableCell>
                         <TableCell>{event.phone || "-"}</TableCell>
-                        <TableCell>
-                          <span className="text-xs font-mono text-muted-foreground">{event.user_id}</span>
+                        <TableCell className="max-w-[12ch] xl:max-w-[22ch]">
+                          <span
+                            className="block truncate text-xs font-mono text-muted-foreground"
+                            title={event.user_id}
+                          >
+                            {event.user_id}
+                          </span>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="font-normal">
-                            <Smartphone className="w-3 h-3 mr-1" />
-                            {deviceLabel(event)}
+                          <Badge
+                            variant="secondary"
+                            className="font-normal max-w-[16ch] xl:max-w-[28ch]"
+                            title={deviceLabel(event)}
+                          >
+                            <Smartphone className="w-3 h-3 mr-1 shrink-0" />
+                            <span className="truncate">{deviceLabel(event)}</span>
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDate(event.created_at)}</TableCell>
@@ -170,10 +179,9 @@ export default function AdminPinUsage() {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
                   <span className="text-sm text-muted-foreground">
                     Page {page} of {totalPages}
                   </span>
@@ -237,6 +245,6 @@ export default function AdminPinUsage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

@@ -13,6 +13,7 @@ import { Plus, Shield, CheckCircle, XCircle, Edit, Trash2, Eye, EyeOff } from "l
 import { api_client, type AdminUserType } from "@/lib/api-client";
 import { toast } from "sonner";
 import BouncingBalls from "@/components/ui/bouncing-balls";
+import { PageShell } from "@/components/common/page-shell";
 
 const AVAILABLE_PERMISSIONS = [
   { key: "dashboard", label: "Dashboard", description: "View user statistics and management" },
@@ -167,9 +168,9 @@ export default function AdminManagement() {
   const totalAdmins = admins.length;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
+    <PageShell className="py-4 sm:py-6 space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">Admin Management</h1>
           <p className="text-gray-600">Create and manage admin accounts with role-based permissions</p>
         </div>
@@ -180,7 +181,7 @@ export default function AdminManagement() {
               Create Admin
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Create New Admin</DialogTitle>
             </DialogHeader>
@@ -232,7 +233,7 @@ export default function AdminManagement() {
                         id={`create-${permission.key}`}
                         checked={createForm.permissions.includes(permission.key)}
                         onChange={() => togglePermission(permission.key, true)}
-                        className="mt-1"
+                        className="mt-1 size-5 shrink-0"
                       />
                       <div>
                         <label htmlFor={`create-${permission.key}`} className="font-medium text-sm">
@@ -258,20 +259,20 @@ export default function AdminManagement() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Admins</CardTitle>
-            <Shield className="h-8 w-8 text-blue-600 bg-blue-100 p-2 rounded-lg" />
+            <Shield className="h-8 w-8 shrink-0 text-blue-600 bg-blue-100 p-2 rounded-lg" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalAdmins}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Admins</CardTitle>
-            <CheckCircle className="h-8 w-8 text-green-600 bg-green-100 p-2 rounded-lg" />
+            <CheckCircle className="h-8 w-8 shrink-0 text-green-600 bg-green-100 p-2 rounded-lg" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeAdmins}</div>
@@ -304,14 +305,14 @@ export default function AdminManagement() {
                   <TableRow key={admin.id}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 shrink-0 bg-blue-100 rounded-full flex items-center justify-center">
                           <span className="text-sm font-medium text-blue-600">
                             {admin.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <div>
-                          <div className="font-medium">{admin.email}</div>
-                          <div className="text-sm text-gray-500">UID: {admin.id}</div>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate" title={admin.email ?? undefined}>{admin.email}</div>
+                          <div className="text-sm text-gray-500 truncate" title={String(admin.id)}>UID: {admin.id}</div>
                         </div>
                       </div>
                     </TableCell>
@@ -415,7 +416,7 @@ export default function AdminManagement() {
                         id={`edit-${permission.key}`}
                         checked={editForm.permissions.includes(permission.key)}
                         onChange={() => togglePermission(permission.key, false)}
-                        className="mt-1"
+                        className="mt-1 size-5 shrink-0"
                       />
                       <div>
                         <label htmlFor={`edit-${permission.key}`} className="font-medium text-sm">
@@ -439,6 +440,6 @@ export default function AdminManagement() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

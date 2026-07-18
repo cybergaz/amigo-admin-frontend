@@ -220,7 +220,7 @@ export function MessageViewerDialog({
               <img
                 src={url}
                 alt={file_name}
-                className="max-w-md max-h-96 rounded-lg border hover:opacity-90 transition-opacity cursor-pointer"
+                className="w-auto max-w-full sm:max-w-md max-h-96 rounded-lg border object-contain hover:opacity-90 transition-opacity cursor-pointer"
               />
             </a>
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
@@ -235,7 +235,7 @@ export function MessageViewerDialog({
           <div className="mt-2">
             <video
               controls
-              className="max-w-md max-h-96 rounded-lg border"
+              className="w-full max-w-full sm:max-w-md max-h-96 rounded-lg border"
               preload="metadata"
             >
               <source src={url} type={mime_type} />
@@ -298,18 +298,18 @@ export function MessageViewerDialog({
           {!iconOnly && "View Messages"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Messages - {conversationTitle}
+      <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b shrink-0">
+          <DialogTitle className="flex items-center gap-2 pr-8 text-base sm:text-lg">
+            <MessageSquare className="h-5 w-5 shrink-0" />
+            <span className="truncate">Messages - {conversationTitle}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col h-full overflow-y-scroll">
+        <div className="flex flex-col flex-1 min-h-0 px-4 sm:px-6 pt-4">
           {/* Header Controls */}
-          <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2 min-w-0">
               <Badge variant="outline">{conversationType}</Badge>
               {pagination && (
                 <span className="text-sm text-muted-foreground">
@@ -317,9 +317,9 @@ export function MessageViewerDialog({
                 </span>
               )}
             </div>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-              Refresh
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading} className="shrink-0">
+              <RefreshCw className={`h-4 w-4 sm:mr-2 ${loading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
           </div>
 
@@ -333,12 +333,14 @@ export function MessageViewerDialog({
                 placeholder="Search messages by content, sender, or filename..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-9"
+                className="pl-9 pr-10"
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -346,10 +348,10 @@ export function MessageViewerDialog({
             </div>
 
             {/* Filter Controls */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-[140px]">
-                  <Filter className="h-4 w-4 mr-2" />
+                <SelectTrigger className="flex-1 min-w-0 sm:flex-none sm:w-[140px]">
+                  <Filter className="h-4 w-4 mr-2 hidden sm:inline-flex" />
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -361,7 +363,7 @@ export function MessageViewerDialog({
               </Select>
 
               <Select value={filterDeleted} onValueChange={setFilterDeleted}>
-                <SelectTrigger className="w-[130px]">
+                <SelectTrigger className="flex-1 min-w-0 sm:flex-none sm:w-[130px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -461,9 +463,10 @@ export function MessageViewerDialog({
                         <Button
                           size="sm"
                           variant="ghost"
+                          aria-label="Delete message"
                           onClick={() => handleDeleteClick(message)}
                           disabled={deletingMessageId === message.id}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="h-11 w-11 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           {deletingMessageId === message.id ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-destructive"></div>
@@ -477,7 +480,7 @@ export function MessageViewerDialog({
 
                   {/* Message Body */}
                   {message.body && (
-                    <div className="mb-3 ml-11">
+                    <div className="mb-3 ml-0 sm:ml-11">
                       <p className={`text-sm whitespace-pre-wrap break-words ${
                         message.deleted ? "text-muted-foreground italic" : "text-gray-800"
                       }`}>
@@ -488,7 +491,7 @@ export function MessageViewerDialog({
 
                   {/* Attachments */}
                   {message.attachments && (
-                    <div className="mb-3 ml-11">
+                    <div className="mb-3 ml-0 sm:ml-11">
                       <div className="inline-flex items-center gap-2 mb-2">
                         <Badge variant="secondary" className="text-xs">
                           <FileIcon className="h-3 w-3 mr-1" />
@@ -501,7 +504,7 @@ export function MessageViewerDialog({
 
                   {/* Reply Context */}
                   {message.metadata?.reply_to && (
-                    <div className="mb-3 ml-11 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r text-sm">
+                    <div className="mb-3 ml-0 sm:ml-11 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r text-sm">
                       <p className="font-medium text-blue-900 mb-1">Replying to:</p>
                       <p className="text-blue-700 text-xs">{message.metadata.reply_to.body}</p>
                     </div>
@@ -509,7 +512,7 @@ export function MessageViewerDialog({
 
                   {/* Edit Indicator */}
                   {message.edited_at && (
-                    <div className="text-xs text-muted-foreground ml-11 italic">
+                    <div className="text-xs text-muted-foreground ml-0 sm:ml-11 italic">
                       Edited at {formatMessageTime(message.edited_at)}
                     </div>
                   )}
@@ -517,36 +520,36 @@ export function MessageViewerDialog({
               ))
             )}
           </div>
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1 || loading}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Previous
-              </Button>
-
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </span>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages || loading}
-              >
-                Next
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="shrink-0 flex items-center justify-between gap-2 px-4 sm:px-6 py-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1 || loading}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Button>
+
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages || loading}
+            >
+              Next
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        )}
       </DialogContent>
 
       {/* Delete Confirmation Dialog */}
@@ -579,7 +582,7 @@ export function MessageViewerDialog({
               )}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter>
             <Button variant="outline" onClick={handleCancelDelete}>
               Cancel
             </Button>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle, XCircle, Clock, KeyRound, ShieldCheck } from "lucide-react";
+import { PageShell } from "@/components/common/page-shell";
 import { api_client, type PinResetRequest } from "@/lib/api-client";
 import { toast } from "sonner";
 import BouncingBalls from "@/components/ui/bouncing-balls";
@@ -134,18 +135,18 @@ export default function PinResetRequests() {
 
   if (loading && requests.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <BouncingBalls balls={4} className="fill-black stroke-black" animation="animate-bounce-md" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <KeyRound className="w-7 h-7 text-accent-rblue-dark" />
+    <PageShell className="py-4 sm:py-6 space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <KeyRound className="w-7 h-7 shrink-0 text-accent-rblue-dark" />
             Reset-PIN Requests
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -153,7 +154,7 @@ export default function PinResetRequests() {
             forced to choose their own on next login.
           </p>
         </div>
-        <Button onClick={() => fetchRequests(page)} variant="outline">
+        <Button onClick={() => fetchRequests(page)} variant="outline" className="sm:shrink-0">
           Refresh
         </Button>
       </div>
@@ -170,7 +171,7 @@ export default function PinResetRequests() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="hidden md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -222,8 +223,54 @@ export default function PinResetRequests() {
                 </Table>
               </div>
 
+              <div className="md:hidden space-y-3">
+                {requests.map((r) => (
+                  <div key={r.id} className="rounded-lg border p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="font-medium min-w-0 break-words">
+                        {r.name || <span className="text-muted-foreground">Unknown</span>}
+                      </span>
+                      <span className="shrink-0">{statusBadge(r)}</span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground shrink-0">Phone</span>
+                        <span className="min-w-0 break-words text-right">{r.phone || "-"}</span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground shrink-0">Requested</span>
+                        <span className="min-w-0 break-words text-right">{formatDate(r.created_at)}</span>
+                      </div>
+                    </div>
+                    {r.status.toLowerCase() === "pending" ? (
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          onClick={() => { setPinTarget(r); setPinValue(""); }}
+                          disabled={processingId === r.id}
+                          className="w-full bg-green-600 hover:bg-green-700"
+                        >
+                          <ShieldCheck className="w-4 h-4 mr-1" />
+                          Set new PIN
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => setDismissTarget(r)}
+                          disabled={processingId === r.id}
+                          className="w-full"
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Dismiss
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Resolved</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
                   <span className="text-sm text-muted-foreground">
                     Page {page} of {totalPages}
                   </span>
@@ -274,7 +321,7 @@ export default function PinResetRequests() {
               autoFocus
               inputMode="numeric"
               maxLength={4}
-              placeholder="New 4-digit PIN"
+              placeholder="4-digit PIN"
               value={pinValue}
               onChange={(e) => setPinValue(e.target.value.replace(/\D/g, "").slice(0, 4))}
               className="tracking-[0.4em] font-mono text-center text-lg"
@@ -327,6 +374,6 @@ export default function PinResetRequests() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

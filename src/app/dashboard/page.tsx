@@ -6,6 +6,7 @@ import UsersTable from '@/components/UsersTable';
 import CreateUserDialog from '@/components/CreateUserDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PageShell } from '@/components/common/page-shell';
 import { Users, UserCheck, Shield, Phone, UserPlus, KeyRound } from 'lucide-react';
 import { api_client } from '@/lib/api-client';
 import { toast } from 'sonner';
@@ -90,15 +91,14 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <PageShell className="py-8">
         {/* Dashboard Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {statsCards.map((card, index) => {
             const Icon = card.icon;
             return (
               <Card key={index} className={`${card.bgColor} border-0 shadow-sm`}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className={`text-sm font-medium ${card.textColor}`}>
                     {card.title}
                   </CardTitle>
@@ -142,7 +142,6 @@ export default function Dashboard() {
           onSearchChange={setSearchTerm}
           isSuperAdmin={isSuperAdmin}
         />
-      </div>
 
       <CreateUserDialog
         open={createOpen}
@@ -154,6 +153,6 @@ export default function Dashboard() {
           setSearchTerm(name);
         }}
       />
-    </div>
+    </PageShell>
   );
 }

@@ -55,7 +55,10 @@ const TabsList = React.forwardRef<
 
     // Event listeners
     window.addEventListener("resize", updateIndicator);
+    // Web fonts (Inter) swap in after first paint and change tab widths — re-measure.
+    document.fonts?.ready.then(updateIndicator);
     const observer = new MutationObserver(updateIndicator);
+    const resizeObserver = new ResizeObserver(updateIndicator);
 
     if (tabsListRef.current) {
       observer.observe(tabsListRef.current, {
@@ -63,30 +66,40 @@ const TabsList = React.forwardRef<
         childList: true,
         subtree: true,
       });
+      resizeObserver.observe(tabsListRef.current);
     }
 
     return () => {
       clearTimeout(timeoutId);
       window.removeEventListener("resize", updateIndicator);
       observer.disconnect();
+      resizeObserver.disconnect();
     };
   }, [updateIndicator]);
 
   return (
-    <div className="relative" ref={tabsListRef}>
-      <TabsPrimitive.List
-        ref={ref}
-        data-slot="tabs-list"
-        className={cn(
-          "bg-muted text-accent-rblue-dark relative inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]",
-          className
-        )}
-        {...props}
-      />
-      <div
-        className={cn("absolute rounded-md border border-transparent bg-background shadow-sm dark:border-input dark:bg-input/30 transition-all duration-300 ease-in-out", indicatorClassName)}
-        style={indicatorStyle}
-      />
+    // Outer element is the ONLY scroller. The inner ref-wrapper is content-width
+    // and holds both the List and the absolute indicator, so they translate
+    // together as one block and the indicator stays glued at any scroll offset.
+    <div
+      data-slot="tabs-list-scroll"
+      className="relative w-full overflow-x-auto no-scrollbar"
+    >
+      <div className="relative min-w-full w-max" ref={tabsListRef}>
+        <TabsPrimitive.List
+          ref={ref}
+          data-slot="tabs-list"
+          className={cn(
+            "bg-muted text-accent-rblue-dark relative inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]",
+            className
+          )}
+          {...props}
+        />
+        <div
+          className={cn("absolute rounded-md border border-transparent bg-background shadow-sm dark:border-input dark:bg-input/30 transition-all duration-300 ease-in-out", indicatorClassName)}
+          style={indicatorStyle}
+        />
+      </div>
     </div>
   );
 });

@@ -220,7 +220,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-screen min-w-4xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-2xl lg:max-w-4xl 2xl:max-w-6xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-xl">Edit Group: {group?.title}</DialogTitle>
           <DialogDescription className="text-base">
@@ -228,7 +228,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2 xl:gap-8">
           {/* Current Members */}
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
@@ -242,7 +242,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto border rounded-lg bg-muted/20">
+            <div className="max-h-[45vh] sm:max-h-[400px] overflow-y-auto border rounded-lg bg-muted/20">
               {membersLoading ? (
                 <div className="flex flex-col items-center justify-center h-48">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -258,15 +258,15 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
                         : 'bg-background hover:bg-muted/50'
                         }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                           <span className="text-sm font-medium text-primary">
                             {member.name?.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <div>
-                          <span className="font-medium">{member.name}</span>
-                          <div className="text-sm text-muted-foreground">{member.email}</div>
+                        <div className="min-w-0">
+                          <span className="block truncate font-medium">{member.name}</span>
+                          <div className="text-sm text-muted-foreground truncate">{member.email}</div>
                         </div>
                       </div>
                       <Button
@@ -274,7 +274,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
                         size="sm"
                         onClick={() => handleUserToggle(member.id, 'remove')}
                         disabled={loading}
-                        className="min-w-[80px]"
+                        className="min-w-[80px] h-11 sm:h-8"
                       >
                         {selectedUsersToRemove.includes(member.id) ? 'Selected' : 'Remove'}
                       </Button>
@@ -329,7 +329,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto border rounded-lg bg-muted/20">
+            <div className="max-h-[45vh] sm:max-h-[400px] overflow-y-auto border rounded-lg bg-muted/20">
               {usersLoading ? (
                 <div className="flex flex-col items-center justify-center h-48">
                   <BouncingBalls balls={4} className=" fill-black stroke-black" animation="animate-bounce-md" />
@@ -344,15 +344,15 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
                         : 'bg-background hover:bg-muted/50'
                         }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                           <span className="text-sm font-medium text-primary">
                             {user.name?.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <div>
-                          <span className="font-medium">{user.name}</span>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                        <div className="min-w-0">
+                          <span className="block truncate font-medium">{user.name}</span>
+                          <div className="text-sm text-muted-foreground truncate">{user.email}</div>
                         </div>
                       </div>
                       <Button
@@ -360,7 +360,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
                         size="sm"
                         onClick={() => handleUserToggle(user.id, 'add')}
                         disabled={loading}
-                        className="min-w-[80px]"
+                        className="min-w-[80px] h-11 sm:h-8"
                       >
                         {selectedUsersToAdd.includes(user.id) ? 'Selected' : 'Add'}
                       </Button>
@@ -382,7 +382,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-4">
+              <div className="flex flex-wrap justify-center items-center gap-2 mt-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -401,7 +401,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
                         size="sm"
                         onClick={() => handlePageChange(pageNum)}
                         disabled={usersLoading}
-                        className="w-8 h-8 p-0"
+                        className="h-11 w-11 p-0 sm:h-8 sm:w-8"
                       >
                         {pageNum}
                       </Button>
@@ -449,7 +449,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
                     {selectedUsersToAdd.map(userId => {
                       const user = [...currentMembers, ...availableUsers].find(u => u.id === userId);
                       return (
-                        <Badge key={userId} variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                        <Badge key={userId} variant="outline" className="text-green-700 border-green-300 bg-green-50 max-w-full truncate">
                           {user?.name || `User ${userId}`}
                         </Badge>
                       );
@@ -467,7 +467,7 @@ export default function GroupEditDialog({ isOpen, onClose, group, onSave }: Grou
                     {selectedUsersToRemove.map(userId => {
                       const user = currentMembers.find(u => u.id === userId);
                       return (
-                        <Badge key={userId} variant="outline" className="text-red-700 border-red-300 bg-red-50">
+                        <Badge key={userId} variant="outline" className="text-red-700 border-red-300 bg-red-50 max-w-full truncate">
                           {user?.name || `User ${userId}`}
                         </Badge>
                       );

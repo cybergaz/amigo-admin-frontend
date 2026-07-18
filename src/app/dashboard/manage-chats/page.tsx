@@ -28,6 +28,7 @@ import { MessageViewerDialog } from "@/components/chat-management/MessageViewerD
 import { ChatViewerDialog, type ChatViewerDialogProps } from "@/components/chat-management/ChatViewerDialog";
 import { GroupMemberManagementDialog } from "@/components/chat-management/GroupMemberManagementDialog";
 import BouncingBalls from "@/components/ui/bouncing-balls";
+import { PageShell } from "@/components/common/page-shell";
 import {
   Table,
   TableBody,
@@ -419,7 +420,7 @@ export default function ManageChats() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-[60vh] bg-background flex items-center justify-center">
         <div className="text-center flex flex-col gap-2 justify-center items-center">
           <BouncingBalls balls={4} className=" fill-black stroke-black" animation="animate-bounce-md" />
           It is going to take a few extra seconds as we are loading heavy data...
@@ -429,9 +430,8 @@ export default function ManageChats() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Stats Cards */}
+    <PageShell className="py-4 sm:py-6 space-y-6">
+      {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
@@ -501,17 +501,19 @@ export default function ManageChats() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Chat Management</h1>
+          <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
+            <div className="mb-0 md:mb-8 min-w-0">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Chat Management</h1>
               <p className="text-muted-foreground">Manage all groups, inner groups, and direct conversations</p>
             </div>
-            <TabsList className="flex">
-              {/* <TabsTrigger value="overview">Overview</TabsTrigger> */}
-              <TabsTrigger value="user-groups">User Groups</TabsTrigger>
-              <TabsTrigger value="community-groups">Community Groups</TabsTrigger>
-              <TabsTrigger value="direct-chats">Direct Chats</TabsTrigger>
-            </TabsList>
+            <div className="-mx-4 w-[calc(100%+2rem)] overflow-x-auto px-4 md:mx-0 md:w-auto md:overflow-visible md:px-0">
+              <TabsList className="flex w-max">
+                {/* <TabsTrigger value="overview">Overview</TabsTrigger> */}
+                <TabsTrigger value="user-groups">User Groups</TabsTrigger>
+                <TabsTrigger value="community-groups">Community Groups</TabsTrigger>
+                <TabsTrigger value="direct-chats">Direct Chats</TabsTrigger>
+              </TabsList>
+            </div>
           </div>
 
 
@@ -570,7 +572,7 @@ export default function ManageChats() {
         </Tabs>
 
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2 text-red-600">
                 <Trash2 className="h-5 w-5" />
@@ -630,9 +632,7 @@ export default function ManageChats() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-      </div>
-    </div>
+    </PageShell>
   );
 }
 
@@ -699,15 +699,15 @@ function GroupsTable({
         </div>
 
         {/* Search Bar and Filter */}
-        <div className="flex gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 min-w-0 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search by group title, ID, or creator..."
               value={searchQuery}
               onChange={onSearchChange}
-              className="pl-10 max-w-md pr-10"
+              className="pl-10 pr-10 w-full"
               disabled={loading}
             />
             {loading && (
@@ -718,6 +718,7 @@ function GroupsTable({
             variant={showDeleted ? "default" : "outline"}
             onClick={() => onShowDeletedChange(!showDeleted)}
             disabled={loading}
+            className="shrink-0"
           >
             {showDeleted ? "Hide Deleted" : "Show Deleted"}
           </Button>
@@ -758,10 +759,10 @@ function GroupsTable({
                   return (
                     <TableRow key={group.conversationId}>
                       <TableCell className="font-medium">#{group.conversationId}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{group.title || "Untitled Group"}</p>
-                          <p className="text-xs text-muted-foreground">
+                      <TableCell className="max-w-[250px] whitespace-normal">
+                        <div className="min-w-0">
+                          <p className="font-medium break-words">{group.title || "Untitled Group"}</p>
+                          <p className="text-xs text-muted-foreground break-words">
                             Created by: {group.createrName || `ID: ${group.createrId || "N/A"}`}
                           </p>
                         </div>
@@ -772,7 +773,7 @@ function GroupsTable({
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
                           {/* Desktop: Full buttons with text */}
-                          <div className="hidden md:flex gap-2">
+                          <div className="hidden lg:flex gap-2">
                             <ChatViewerDialog
                               conversationId={group.conversationId}
                               conversationTitle={group.title || "Untitled Group"}
@@ -819,7 +820,7 @@ function GroupsTable({
                           </div>
 
                           {/* Mobile: Icon-only buttons */}
-                          <div className="flex md:hidden gap-1">
+                          <div className="flex lg:hidden gap-2">
                             <ChatViewerDialog
                               conversationId={group.conversationId}
                               conversationTitle={group.title || "Untitled Group"}
@@ -836,31 +837,28 @@ function GroupsTable({
                             {!isDeleted && (
                               <>
                                 <Button
-                                  size="sm"
                                   variant="outline"
                                   onClick={() => handleManageMembers(group.conversationId, group.title || "Untitled Group")}
-                                  className="px-2"
+                                  className="h-11 w-11 p-0"
                                 >
-                                  <UserPlus className="h-3 w-3" />
+                                  <UserPlus className="h-4 w-4" />
                                 </Button>
                                 <Button
-                                  size="sm"
                                   variant="outline"
                                   onClick={() => onDelete(group.conversationId)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-11 w-11 p-0"
                                 >
-                                  <Trash2 className="h-3 w-3" />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </>
                             )}
                             {isDeleted && (
                               <Button
-                                size="sm"
                                 variant="outline"
                                 onClick={() => onRevive(group.conversationId)}
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50 px-2"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50 h-11 w-11 p-0"
                               >
-                                <RefreshCw className="h-3 w-3" />
+                                <RefreshCw className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
@@ -875,8 +873,8 @@ function GroupsTable({
 
           {/* Pagination Controls */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-3 px-4 py-4 border-t sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="text-sm text-muted-foreground text-center sm:text-left">
                 Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalCount} total)
               </div>
               <div className="flex gap-2">
@@ -974,14 +972,14 @@ function DirectChatsTable({
         </div>
 
         {/* Search Bar */}
-        <div className="relative">
+        <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search by name, phone number, or user ID..."
             value={searchQuery}
             onChange={onSearchChange}
-            className="pl-10 max-w-md pr-10"
+            className="pl-10 pr-10 w-full"
             disabled={loading}
           />
           {loading && (
@@ -1020,31 +1018,31 @@ function DirectChatsTable({
               ) : (
                 chats.map((chat) => (
                   <TableRow key={chat.conversationId}>
-                    <TableCell>
+                    <TableCell className="max-w-[250px] whitespace-normal">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
                           <span className="text-xs font-medium text-white">
                             {chat.participant1?.userName?.charAt(0).toUpperCase() || "U"}
                           </span>
                         </div>
-                        <div>
-                          <p className="font-medium">{chat.participant1?.userName || "Unknown User"}</p>
-                          <p className="text-xs text-muted-foreground">
+                        <div className="min-w-0">
+                          <p className="font-medium break-words">{chat.participant1?.userName || "Unknown User"}</p>
+                          <p className="text-xs text-muted-foreground truncate" title={chat.participant1?.userEmail || undefined}>
                             {chat.participant1?.userEmail || `ID: ${chat.participant1?.userId || "N/A"}`}
                           </p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-[250px] whitespace-normal">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shrink-0">
                           <span className="text-xs font-medium text-white">
                             {chat.participant2?.userName?.charAt(0).toUpperCase() || "U"}
                           </span>
                         </div>
-                        <div>
-                          <p className="font-medium">{chat.participant2?.userName || "Unknown User"}</p>
-                          <p className="text-xs text-muted-foreground">
+                        <div className="min-w-0">
+                          <p className="font-medium break-words">{chat.participant2?.userName || "Unknown User"}</p>
+                          <p className="text-xs text-muted-foreground truncate" title={chat.participant2?.userEmail || undefined}>
                             {chat.participant2?.userEmail || `ID: ${chat.participant2?.userId || "N/A"}`}
                           </p>
                         </div>
@@ -1056,7 +1054,8 @@ function DirectChatsTable({
                       </p>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
+                      {/* Desktop: Full buttons with text */}
+                      <div className="hidden lg:flex gap-2 justify-end">
                         <MessageViewerDialog
                           conversationId={chat.conversationId}
                           conversationTitle={`${chat.participant1?.userName || 'User'} & ${chat.participant2?.userName || 'User'}`}
@@ -1072,6 +1071,23 @@ function DirectChatsTable({
                           Delete
                         </Button>
                       </div>
+
+                      {/* Mobile: Icon-only buttons */}
+                      <div className="flex lg:hidden gap-2 justify-end">
+                        <MessageViewerDialog
+                          conversationId={chat.conversationId}
+                          conversationTitle={`${chat.participant1?.userName || 'User'} & ${chat.participant2?.userName || 'User'}`}
+                          conversationType="dm"
+                          iconOnly
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => onDelete(chat.conversationId)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 h-11 w-11 p-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -1081,8 +1097,8 @@ function DirectChatsTable({
 
           {/* Pagination Controls */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-3 px-4 py-4 border-t sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="text-sm text-muted-foreground text-center sm:text-left">
                 Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalCount} total)
               </div>
               <div className="flex gap-2">

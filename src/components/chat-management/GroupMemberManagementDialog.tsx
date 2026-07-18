@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +50,9 @@ export function GroupMemberManagementDialog({
   const [creatorName, setCreatorName] = useState<string | null>(null);
   const [memberRoles, setMemberRoles] = useState<Record<number, 'admin' | 'member'>>({});
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   // Pagination and search states
   const [currentPage, setCurrentPage] = useState(1);
@@ -75,7 +78,11 @@ export function GroupMemberManagementDialog({
     const handleClickOutside = (event: MouseEvent) => {
       if (openDropdownId !== null) {
         const dropdownElement = dropdownRefs.current[openDropdownId];
-        if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+        const menuElement = menuRef.current;
+        const target = event.target as Node;
+        const insideAnchor = dropdownElement ? dropdownElement.contains(target) : false;
+        const insideMenu = menuElement ? menuElement.contains(target) : false;
+        if (!insideAnchor && !insideMenu) {
           setOpenDropdownId(null);
         }
       }
@@ -343,7 +350,15 @@ export function GroupMemberManagementDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl sm:min-w-2xl md:min-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0"
+        onInteractOutside={(e) => {
+          const target = e.detail.originalEvent.target as Node | null;
+          if (target && menuRef.current?.contains(target)) {
+            e.preventDefault();
+          }
+        }}
+      >
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b">
           <DialogHeader>
@@ -362,7 +377,7 @@ export function GroupMemberManagementDialog({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Current Members */}
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-3">
@@ -439,15 +454,26 @@ export function GroupMemberManagementDialog({
                           {/* Actions dropdown */}
                           <div className="relative shrink-0" ref={(el) => { dropdownRefs.current[member.id] = el; }}>
                             <button
-                              onClick={() => setOpenDropdownId(openDropdownId === member.id ? null : member.id)}
+                              onClick={(e) => {
+                                if (openDropdownId === member.id) {
+                                  setOpenDropdownId(null);
+                                } else {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setMenuPos({ top: rect.bottom + 4, left: Math.max(8, rect.right - 176) });
+                                  setOpenDropdownId(member.id);
+                                }
+                              }}
                               disabled={loading}
-                              className="p-1.5 rounded-md hover:bg-muted transition-colors disabled:opacity-50"
+                              className="h-11 w-11 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-md hover:bg-muted transition-colors disabled:opacity-50"
                             >
                               <Settings className="h-3.5 w-3.5 text-muted-foreground" />
                             </button>
 
-                            {openDropdownId === member.id && (
-                              <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-white border rounded-lg shadow-lg py-1">
+                            {openDropdownId === member.id && menuPos && createPortal(
+                              <div
+                                ref={menuRef}
+                                style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
+                                className="z-[60] w-44 bg-white border rounded-lg shadow-lg py-1">
                                 {!isAdmin && (
                                   <button
                                     onClick={() => { handlePromoteToAdmin(member.id); setOpenDropdownId(null); }}
@@ -490,7 +516,8 @@ export function GroupMemberManagementDialog({
                                   {isMarkedForRemoval ? <X className="h-3.5 w-3.5" /> : <UserMinus className="h-3.5 w-3.5" />}
                                   {isMarkedForRemoval ? 'Cancel Removal' : 'Remove'}
                                 </button>
-                              </div>
+                              </div>,
+                              document.body
                             )}
                           </div>
                         </div>
@@ -601,7 +628,7 @@ export function GroupMemberManagementDialog({
                           <button
                             onClick={() => handleUserToggle(user.id, 'add')}
                             disabled={loading || isMember}
-                            className={`shrink-0 p-1.5 rounded-md transition-colors disabled:opacity-50 ${isSelected
+                            className={`shrink-0 h-11 w-11 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-md transition-colors disabled:opacity-50 ${isSelected
                               ? 'bg-primary text-white'
                               : isMember
                                 ? 'bg-muted text-muted-foreground'
@@ -625,11 +652,11 @@ export function GroupMemberManagementDialog({
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-1 mt-3">
+                <div className="flex justify-center items-center gap-2 mt-3">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1 || usersLoading}
-                    className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 transition-colors"
+                    className="h-11 w-11 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-md hover:bg-muted disabled:opacity-30 transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
@@ -639,7 +666,7 @@ export function GroupMemberManagementDialog({
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages || usersLoading}
-                    className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 transition-colors"
+                    className="h-11 w-11 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-md hover:bg-muted disabled:opacity-30 transition-colors"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -663,12 +690,12 @@ export function GroupMemberManagementDialog({
         {/* Footer */}
         {hasChanges && (
           <div className="px-6 py-4 border-t bg-muted/20">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 text-xs min-w-0 flex-1">
                 {selectedUsersToAdd.length > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    <span className="text-green-700">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                    <span className="text-green-700 truncate min-w-0">
                       Adding {selectedUsersToAdd.length}: {selectedUsersToAdd.map(id => {
                         const user = [...currentMembers, ...availableUsers].find(u => u.id === id);
                         return user?.name || `#${id}`;
@@ -677,9 +704,9 @@ export function GroupMemberManagementDialog({
                   </div>
                 )}
                 {selectedUsersToRemove.length > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                    <span className="text-red-700">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                    <span className="text-red-700 truncate min-w-0">
                       Removing {selectedUsersToRemove.length}: {selectedUsersToRemove.map(id => {
                         const user = currentMembers.find(u => u.id === id);
                         return user?.name || `#${id}`;
@@ -689,7 +716,7 @@ export function GroupMemberManagementDialog({
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                 {selectedUsersToRemove.length > 0 && selectedUsersToAdd.length > 0 && (
                   <Button
                     onClick={handleMakeChanges}

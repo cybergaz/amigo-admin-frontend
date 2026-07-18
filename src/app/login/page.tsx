@@ -67,14 +67,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
+    <div className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
       <div className="w-full max-w-md">
         {/* Header with Logo/Brand */}
-        <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-accent-rblue-dark rounded-full flex items-center justify-center mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-accent-rblue-dark rounded-full flex items-center justify-center mb-3 sm:mb-4">
             <Shield className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-accent-rblue-dark">Amigo Admin</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-accent-rblue-dark">Amigo Admin</h1>
           <p className="text-muted-foreground mt-2">Secure access to your admin panel</p>
         </div>
 
@@ -90,7 +90,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
@@ -107,14 +107,14 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-9 pr-9"
+                    className="pl-9 pr-11"
                     required
                     disabled={isLoading}
                   />
@@ -122,7 +122,7 @@ export default function LoginPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-full w-11 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isLoading}
                   >
@@ -136,7 +136,7 @@ export default function LoginPage() {
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col space-y-4 mt-6">
+            <CardFooter className="flex flex-col items-stretch space-y-4 mt-6">
               <Button
                 type="submit"
                 className="w-full bg-accent-rblue hover:bg-accent-rblue-dark text-white font-semibold"
@@ -160,7 +160,7 @@ export default function LoginPage() {
         </Card>
 
         {/* Footer */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-6 sm:mt-8">
           <p className="text-sm text-muted-foreground">
             © 2025 Amigo. All rights reserved.
           </p>

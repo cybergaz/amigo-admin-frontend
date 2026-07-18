@@ -126,7 +126,7 @@ export default function GroupAddToCommunitiesDialog({ isOpen, onClose, group, on
           )}
 
           {/* Communities List */}
-          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+          <div className="space-y-3 max-h-[40vh] sm:max-h-[400px] overflow-y-auto">
             {communitiesLoading ? (
               <div className="flex flex-col items-center justify-center h-48">
                 <BouncingBalls balls={4} className="fill-black stroke-black" animation="animate-bounce-md" />
@@ -150,8 +150,8 @@ export default function GroupAddToCommunitiesDialog({ isOpen, onClose, group, on
                   }`}
                   onClick={() => handleToggleCommunity(community.id)}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
                       selectedCommunities.includes(community.id)
                         ? 'bg-primary border-primary'
                         : 'border-muted-foreground'
@@ -172,14 +172,14 @@ export default function GroupAddToCommunitiesDialog({ isOpen, onClose, group, on
                         </svg>
                       )}
                     </div>
-                    <div>
-                      <div className="font-medium">{community.name}</div>
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{community.name}</div>
                       <div className="text-sm text-muted-foreground">
                         {community.group_ids?.length || 0} {community.group_ids?.length === 1 ? 'group' : 'groups'}
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground shrink-0 whitespace-nowrap ml-3">
                     {new Date(community.created_at).toLocaleDateString()}
                   </div>
                 </div>
@@ -200,10 +200,10 @@ export default function GroupAddToCommunitiesDialog({ isOpen, onClose, group, on
                 {selectedCommunities.map(communityId => {
                   const community = communities.find(c => c.id === communityId);
                   return (
-                    <Badge 
-                      key={communityId} 
-                      variant="outline" 
-                      className="text-green-700 border-green-300 bg-white dark:bg-green-950/30"
+                    <Badge
+                      key={communityId}
+                      variant="outline"
+                      className="text-green-700 border-green-300 bg-white dark:bg-green-950/30 max-w-full truncate"
                     >
                       {community?.name || `Community ${communityId}`}
                     </Badge>

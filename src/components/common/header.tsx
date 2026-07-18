@@ -22,24 +22,22 @@ export default function Header({ className }: { className?: string }) {
   const loading = user_store((state) => state.isLoading);
 
   return (
-    <div className={cn("w-screen bg-white border-b border-gray-200", className)}>
-      <div className=" mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-accent-blue to-accent-violet-dark rounded-xl flex items-center justify-center">
-                <span className="text-white text-lg font-bold">A</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Amigo Admin</h1>
-                <p className="text-sm text-gray-500">Control Panel</p>
-              </div>
+    <div className={cn("w-full bg-white border-b border-gray-200", className)}>
+      <div className="page-shell">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 min-h-16 py-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 shrink-0 bg-gradient-to-r from-accent-blue to-accent-violet-dark rounded-xl flex items-center justify-center">
+              <span className="text-white text-lg font-bold">A</span>
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Amigo Admin</h1>
+              <p className="text-xs sm:text-sm text-gray-500 truncate">Control Panel</p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 bg-gray-50 rounded-lg px-4 py-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 bg-gray-50 rounded-lg px-2 py-1.5 sm:px-4 sm:py-2 min-w-0">
+              <div className="w-8 h-8 shrink-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-semibold">
                   {
                     loading
@@ -48,29 +46,29 @@ export default function Header({ className }: { className?: string }) {
                   }
                 </span>
               </div>
-              <div className="hidden sm:block">
+              <div className="hidden sm:block min-w-0">
                 {
                   loading
                     ? <BouncingBalls balls={4} className=" fill-black stroke-black" animation="animate-bounce-md" />
                     :
                     <>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 truncate max-w-[40vw] lg:max-w-[16rem]">
                         {user?.email}
                       </p>
-                      <p className="text-xs text-gray-500">{formatString(user?.role === "admin" ? "super admin" : user?.role)}</p>
+                      <p className="text-xs text-gray-500 truncate">{formatString(user?.role === "admin" ? "super admin" : user?.role)}</p>
                     </>
                 }
               </div>
             </div>
 
-            {/* Logout Button */}
+            {/* Logout Button — icon-only on phones, full label from sm up */}
             <button
               onClick={() => handle_logout(router)}
-              className="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center shrink-0 h-10 touch:h-11 px-3 sm:px-4 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Logout"
             >
-              Logout
-              <LogOut className="h-4 w-4 ml-2" />
+              <span className="hidden sm:inline">Logout</span>
+              <LogOut className="h-4 w-4 sm:ml-2" />
             </button>
           </div>
         </div>

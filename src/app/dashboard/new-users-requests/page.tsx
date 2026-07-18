@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { PageShell } from "@/components/common/page-shell";
 import { api_client } from "@/lib/api-client";
 import { toast } from "sonner";
 import BouncingBalls from "@/components/ui/bouncing-balls";
@@ -160,22 +161,22 @@ export default function NewUsersRequests() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <BouncingBalls balls={4} className="fill-black stroke-black" animation="animate-bounce-md" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">New Users Requests</h1>
+    <PageShell className="py-4 sm:py-6 space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold">New Users Requests</h1>
           <p className="text-muted-foreground mt-1">
             Manage and review user signup requests
           </p>
         </div>
-        <Button onClick={fetchRequests} variant="outline">
+        <Button onClick={fetchRequests} variant="outline" className="sm:shrink-0">
           Refresh
         </Button>
       </div>
@@ -191,73 +192,130 @@ export default function NewUsersRequests() {
               <p className="text-muted-foreground">No signup requests found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Requested At</TableHead>
-                    <TableHead>Rejection Reason</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {requests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium">
-                        {request.name}
-                      </TableCell>
-                      <TableCell>{request.phone}</TableCell>
-                      <TableCell>{getStatusBadge(request.status)}</TableCell>
-                      <TableCell>{formatDate(request.created_at)}</TableCell>
-                      <TableCell>
-                        {request.rejected_reason ? (
-                          <span className="text-sm text-red-600 italic">
-                            {request.rejected_reason}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {request.status === "pending" && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleApprove(request)}
-                                disabled={isProcessing}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleRejectClick(request)}
-                                disabled={isProcessing}
-                              >
-                                <XCircle className="w-4 h-4 mr-1" />
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                          {request.status !== "pending" && (
-                            <span className="text-sm text-muted-foreground">
-                              {request.status === "accepted" ? "Already accepted" : "Already rejected"}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
+            <>
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Requested At</TableHead>
+                      <TableHead>Rejection Reason</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {requests.map((request) => (
+                      <TableRow key={request.id}>
+                        <TableCell className="font-medium">
+                          {request.name}
+                        </TableCell>
+                        <TableCell>{request.phone}</TableCell>
+                        <TableCell>{getStatusBadge(request.status)}</TableCell>
+                        <TableCell>{formatDate(request.created_at)}</TableCell>
+                        <TableCell className="max-w-[24ch] lg:max-w-[36ch]">
+                          {request.rejected_reason ? (
+                            <span
+                              className="block truncate text-sm text-red-600 italic"
+                              title={request.rejected_reason}
+                            >
+                              {request.rejected_reason}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {request.status === "pending" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleApprove(request)}
+                                  disabled={isProcessing}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleRejectClick(request)}
+                                  disabled={isProcessing}
+                                >
+                                  <XCircle className="w-4 h-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            {request.status !== "pending" && (
+                              <span className="text-sm text-muted-foreground">
+                                {request.status === "accepted" ? "Already accepted" : "Already rejected"}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="md:hidden space-y-3">
+                {requests.map((request) => (
+                  <div key={request.id} className="rounded-lg border p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="font-medium min-w-0 break-words">{request.name}</span>
+                      <span className="shrink-0">{getStatusBadge(request.status)}</span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground shrink-0">Phone</span>
+                        <span className="min-w-0 break-words text-right">{request.phone}</span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground shrink-0">Requested</span>
+                        <span className="min-w-0 break-words text-right">{formatDate(request.created_at)}</span>
+                      </div>
+                    </div>
+                    {request.rejected_reason && (
+                      <p className="text-sm text-red-600 italic break-words">
+                        {request.rejected_reason}
+                      </p>
+                    )}
+                    {request.status === "pending" ? (
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          variant="default"
+                          onClick={() => handleApprove(request)}
+                          disabled={isProcessing}
+                          className="w-full bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleRejectClick(request)}
+                          disabled={isProcessing}
+                          className="w-full"
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        {request.status === "accepted" ? "Already accepted" : "Already rejected"}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -306,7 +364,7 @@ export default function NewUsersRequests() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }
 

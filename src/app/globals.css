@@ -23,15 +23,13 @@
   }
 }
 
-/* Custom breakpoint for extra small screens */
-@media (min-width: 475px) {
-  .xs\:inline {
-    display: inline;
-  }
-  
-  .xs\:hidden {
-    display: none;
-  }
+/* Real Tailwind v4 breakpoint + page-container width token.
+   Replaces the old hand-rolled @media(475px) hack that lived outside the
+   cascade layers and only defined xs:inline/xs:hidden. Registering the
+   breakpoint here generates the full xs:* utility surface in the correct layer. */
+@theme {
+  --breakpoint-xs: 30rem;      /* 480px */
+  --container-page: 90rem;     /* 1440px — shared max width for chrome + content */
 }
 
 @layer utilities {
@@ -46,6 +44,7 @@
 }
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant touch (@media (pointer: coarse));
 
 @theme inline {
   --color-accent-blue-light: #7ca6eb;
@@ -68,8 +67,8 @@
   --color-accent-gray-dark: #303030;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -103,8 +102,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius: var(----radius);
-  --color-destructive-foreground: var(----destructive-foreground);
+  --color-destructive-foreground: var(--destructive-foreground);
 
   --animate-aurora: aurora 8s ease-in-out infinite alternate;
 
@@ -724,16 +722,45 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Horizontal-overflow backstop. `clip` (not `hidden`) does NOT create a
+     scroll container, so position:sticky on the nav keeps working. */
+  html {
+    overflow-x: clip;
+  }
+
+  /* Remove the 300ms tap delay on interactive elements. */
+  :where(button, a, [role="button"]) {
+    touch-action: manipulation;
+  }
 }
 
-.no-visible-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  -webkit-overflow-scrolling: touch;
+/* Canonical page container: fluid side padding + shared max width so page
+   chrome (header, nav) and page content align to the exact same edges. */
+@layer components {
+  .page-shell {
+    width: 100%;
+    max-width: var(--container-page);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 2rem);
+  }
 }
 
-.no-visible-scrollbar::-webkit-scrollbar {
-  display: none;
+/* One reduced-motion guard for the ~40 animation tokens and 16 infinite
+   loaders. Keep a non-motion "loading" affordance via a gentle opacity pulse. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [class*="animate-bounce-"] {
+    animation: fade-in 1s ease-in-out infinite alternate !important;
+  }
 }
 
 .typing-animation {
@@ -781,10 +808,6 @@
   100% {
     background-position: 0% 50%;
   }
-}
-
-.no-scroll-bar {
-  scrollbar-color: red transparent;
 }
 
 .gradient-border {

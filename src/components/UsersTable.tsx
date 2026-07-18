@@ -289,7 +289,7 @@ export const CountryCodeSelect: React.FC<CountryCodeSelectProps> = ({ value, onC
       </button>
 
       {open && (
-        <div className="absolute z-50 top-10 left-0 w-64 rounded-md border border-input bg-background shadow-lg">
+        <div className="absolute z-50 top-10 left-0 w-[min(16rem,calc(100vw-3rem))] rounded-md border border-input bg-background shadow-lg">
           <div className="p-2 border-b">
             <input
               autoFocus
@@ -655,7 +655,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
   }, []);
 
   return (
-    <div className={`${className} relative bg-black/3 p-8 max-sm:p-2 max-sm:py-4 rounded-xl`}>
+    <div className={`${className} relative bg-black/3 p-8 max-sm:p-2 max-sm:py-4 rounded-xl max-w-[1600px] mx-auto`}>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Users Management</h2>
         <Button
@@ -705,7 +705,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
       {(!loading || users.length > 0) && !error && (
 
         <Card>
-          <div className="overflow-x-auto">
+          <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -795,12 +795,76 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
             </Table>
           </div>
 
+          {/* Mobile card fallback (below md) */}
+          <div className="md:hidden divide-y">
+            {users.map((user) => (
+              <div key={user.id} className="p-4 space-y-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 shrink-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{user.name}</p>
+                    {user.phone && (
+                      <p className="text-sm text-gray-500 truncate">{user.phone}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={user.online_status ? 'default' : 'secondary'} className={cn(user.online_status ? 'bg-green-400/20 text-green-800' : 'bg-gray-100 text-gray-800')}>
+                    {user.online_status ? 'Online' : 'Offline'}
+                  </Badge>
+                  <Badge variant={getRoleBadgeVariant(user.role)}>
+                    {formatString(user.role)}
+                  </Badge>
+                  <Badge variant={user.call_access ? 'default' : 'secondary'} className={cn(user.call_access ? 'bg-green-400/20 text-green-800' : 'bg-gray-100 text-gray-800')}>
+                    {user.call_access ? 'Access' : 'No Access'}
+                  </Badge>
+                  <Badge variant="blue">
+                    {user.app_version || 'N/A'}
+                  </Badge>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleLocationClick(user)}
+                    className="flex items-center space-x-1"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    <span>View</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRoleEdit(user)}
+                    className="flex items-center space-x-1"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteClick(user)}
+                    className="flex items-center space-x-1 bg-red-500 hover:bg-red-600 border-red-500 hover:border-red-600"
+                  >
+                    <Trash2 className="h-4 w-4 text-white" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* Pagination */}
-          <div className="flex items-center justify-between p-4 border-t">
+          <div className="flex flex-col gap-3 p-4 border-t sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-500">
               Showing {users.length} of {pagination.totalCount} users
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -863,9 +927,9 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                       <span>{locationInfo.city}</span>
                     </div>
                     {locationInfo.address && (
-                      <div className="flex justify-between">
-                        <span>Address:</span>
-                        <span className="text-right max-w-[200px]">{locationInfo.address}</span>
+                      <div className="flex justify-between gap-3 min-w-0">
+                        <span className="shrink-0">Address:</span>
+                        <span className="text-right max-w-[60%] break-words">{locationInfo.address}</span>
                       </div>
                     )}
                   </div>
@@ -882,9 +946,9 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                       <span>Longitude:</span>
                       <span>{selectedUser?.location?.longitude}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>IP Address:</span>
-                      <span>{selectedUser?.ip_address || 'Unknown'}</span>
+                    <div className="flex justify-between gap-3 min-w-0">
+                      <span className="shrink-0">IP Address:</span>
+                      <span className="text-right break-all">{selectedUser?.ip_address || 'Unknown'}</span>
                     </div>
                   </div>
                 </div>
@@ -910,7 +974,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
             )}
           </div>
 
-          <DialogFooter className="flex space-x-2">
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:space-x-2">
             <Button onClick={openInMaps} className="flex items-center space-x-2">
               <MapPin className="h-4 w-4" />
               <span>Open in Maps</span>
@@ -1143,17 +1207,17 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <h3 className="font-semibold mb-3">User to be deleted:</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="font-medium">Name:</span>
-                  <span className="font-bold">{selectedUser?.name}</span>
+                <div className="flex justify-between gap-3 min-w-0">
+                  <span className="font-medium shrink-0">Name:</span>
+                  <span className="font-bold text-right break-words">{selectedUser?.name}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Phone:</span>
-                  <span>{selectedUser?.phone || 'N/A'}</span>
+                <div className="flex justify-between gap-3 min-w-0">
+                  <span className="font-medium shrink-0">Phone:</span>
+                  <span className="text-right break-all">{selectedUser?.phone || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Email:</span>
-                  <span>{selectedUser?.email || 'N/A'}</span>
+                <div className="flex justify-between gap-3 min-w-0">
+                  <span className="font-medium shrink-0">Email:</span>
+                  <span className="text-right break-all">{selectedUser?.email || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium">Role:</span>
@@ -1161,9 +1225,9 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                     {formatString(selectedUser?.role)}
                   </Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">User ID:</span>
-                  <span className="font-mono">{selectedUser?.id}</span>
+                <div className="flex justify-between gap-3 min-w-0">
+                  <span className="font-medium shrink-0">User ID:</span>
+                  <span className="font-mono text-right break-all">{selectedUser?.id}</span>
                 </div>
               </div>
             </div>
