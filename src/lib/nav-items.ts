@@ -8,6 +8,7 @@ import {
   Megaphone,
   ShieldAlert,
   KeyRound,
+  Flag,
 } from "lucide-react";
 import type { UserPermissions } from "@/lib/api-client";
 
@@ -25,4 +26,5 @@ export const NAV_ITEMS = [
   { href: "/dashboard/marquee-banner", label: "Marquee Banner", icon: Megaphone, value: "marquee-banner", canView: superAdmin },
   { href: "/dashboard/admin-pin-usage", label: "Admin PIN Usage", icon: ShieldAlert, value: "admin-pin-usage", canView: superAdmin },
   { href: "/dashboard/pin-reset-requests", label: "Reset PIN Requests", icon: KeyRound, value: "pin-reset-requests", canView: superAdmin },
+  { href: "/dashboard/reports", label: "Reports", icon: Flag, value: "reports", canView: can("manage-chats") },
 ] as const;

@@ -201,6 +201,88 @@ interface StandaloneGroup {
 }
 
 
+// --- Account safety: user reports (backend docs/ACCOUNT_SAFETY.md §2.3) ---
+
+type ReportTargetType = "user" | "message" | "group";
+type ReportReason = "spam" | "harassment" | "sexual" | "violence" | "scam" | "other";
+type ReportStatus = "open" | "reviewed" | "dismissed";
+type ReportStatusFilter = "open" | "closed" | "all";
+
+// Live users row; falls back to the evidence snapshot if the FK was nulled.
+interface ReportPersonRef {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  deleted: boolean;
+}
+
+interface ReportChatRef {
+  id: string;
+  type: string;
+  title: string | null;
+}
+
+interface ReportListItem {
+  id: string;
+  target_type: ReportTargetType;
+  reason: ReportReason | string;
+  note_preview: string | null;
+  status: ReportStatus | string;
+  created_at: string;
+  reporter: ReportPersonRef | null;
+  reported_user: ReportPersonRef | null;
+  chat: ReportChatRef | null;
+  message_id: string | null;
+}
+
+interface ReportEvidenceMessage {
+  id: string;
+  sender_id: string | null;
+  type: string;
+  body: string | null;
+  attachments: { url: string; mime?: string; name?: string }[] | null;
+  sent_at: string | null;
+}
+
+interface ReportEvidencePerson {
+  id: string;
+  name: string | null;
+  phone: string | null;
+}
+
+interface ReportEvidence {
+  v: number;
+  captured_at: string;
+  reporter: ReportEvidencePerson | null;
+  reported_user: ReportEvidencePerson | null;
+  chat: { id: string; type: string; title: string | null; member_count: number | null } | null;
+  reported_message: ReportEvidenceMessage | null;
+  recent_messages: ReportEvidenceMessage[] | null;
+}
+
+interface ReportDetail extends ReportListItem {
+  note: string | null;
+  evidence: ReportEvidence | null;
+  reporter_blocked: boolean;
+  reporter_left: boolean;
+  reviewed_at: string | null;
+  reviewed_by: { id: string; name: string | null } | null;
+  review_note: string | null;
+}
+
+interface ReportsResponse {
+  reports: ReportListItem[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+
 const get_token_from_cookies = () => {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp('(^| )' + 'access_token' + '=([^;]+)'));
@@ -786,8 +868,34 @@ class ApiClient {
     });
   }
 
+  // --- Account safety: user reports. Admin, or sub_admin with "manage-chats". ---
+  async getReports(page: number = 1, limit: number = 20, status: ReportStatusFilter = 'open'): Promise<ApiResponse<ReportsResponse>> {
+    const query = new URLSearchParams({ page: String(page), limit: String(limit), status });
+    return this.makeRequest<ReportsResponse>(`/admin/reports?${query.toString()}`);
+  }
+
+  async getReport(id: string): Promise<ApiResponse<ReportDetail>> {
+    return this.makeRequest<ReportDetail>(`/admin/reports/${encodeURIComponent(id)}`);
+  }
+
+  async resolveReport(id: string, status: 'reviewed' | 'dismissed', note?: string): Promise<ApiResponse<{ id: string; status: string; reviewed_at: string }>> {
+    const trimmed = note?.trim();
+    return this.makeRequest<{ id: string; status: string; reviewed_at: string }>(
+      `/admin/reports/${encodeURIComponent(id)}/resolve`,
+      { method: 'POST', body: JSON.stringify(trimmed ? { status, note: trimmed } : { status }) },
+    );
+  }
+
+  // Anonymizing delete (keeps report links + evidence). Super admin only.
+  async adminDeleteAccount(userId: string): Promise<ApiResponse<{ deleted: boolean; id: string }>> {
+    return this.makeRequest<{ deleted: boolean; id: string }>(
+      `/admin/users/${encodeURIComponent(userId)}/delete-account`,
+      { method: 'POST', body: JSON.stringify({}) },
+    );
+  }
+
 }
 
-export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup, type AdminPinEvent, type AdminPinEventsResponse, type DeviceChangeRequest, type DeviceChangeRequestsResponse, type SingleDeviceLock, type PinResetRequest, type PinResetRequestsResponse };
+export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup, type AdminPinEvent, type AdminPinEventsResponse, type DeviceChangeRequest, type DeviceChangeRequestsResponse, type SingleDeviceLock, type PinResetRequest, type PinResetRequestsResponse, type ReportTargetType, type ReportReason, type ReportStatus, type ReportStatusFilter, type ReportPersonRef, type ReportChatRef, type ReportListItem, type ReportEvidence, type ReportEvidenceMessage, type ReportDetail, type ReportsResponse };
 
 export const api_client = new ApiClient();

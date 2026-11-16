@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import UsersTable from '@/components/UsersTable';
 import CreateUserDialog from '@/components/CreateUserDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +20,17 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
+  // useSearchParams needs a Suspense boundary in Next 15.
+  return (
+    <Suspense fallback={null}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
+  // `/dashboard?search=<phone or name>` (e.g. from a report) opens a pre-filtered user list.
+  const searchParam = useSearchParams().get('search') ?? '';
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     onlineUsers: 0,
@@ -26,7 +38,7 @@ export default function Dashboard() {
     callAccess: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParam);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -46,6 +58,11 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
+  // Follow a new ?search= when navigating between links while already on this page.
+  useEffect(() => {
+    if (searchParam) setSearchTerm(searchParam);
+  }, [searchParam]);
 
   useEffect(() => {
     fetchDashboardStats();
