@@ -9,12 +9,15 @@ import {
   ShieldAlert,
   KeyRound,
   Flag,
+  UserX,
+  LifeBuoy,
 } from "lucide-react";
 import type { UserPermissions } from "@/lib/api-client";
 
 const can = (perm: string) => (p: UserPermissions) =>
   p.role === "admin" || p.permissions.includes(perm);
 const superAdmin = (p: UserPermissions) => p.role === "admin";
+const anyAdmin = (p: UserPermissions) => p.role === "admin" || p.role === "sub_admin";
 
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, value: "dashboard", canView: can("dashboard") },
@@ -27,4 +30,6 @@ export const NAV_ITEMS = [
   { href: "/dashboard/admin-pin-usage", label: "Admin PIN Usage", icon: ShieldAlert, value: "admin-pin-usage", canView: superAdmin },
   { href: "/dashboard/pin-reset-requests", label: "Reset PIN Requests", icon: KeyRound, value: "pin-reset-requests", canView: superAdmin },
   { href: "/dashboard/reports", label: "Reports", icon: Flag, value: "reports", canView: can("manage-chats") },
+  { href: "/dashboard/deleted-accounts", label: "Deleted Accounts", icon: UserX, value: "deleted-accounts", canView: anyAdmin },
+  { href: "/dashboard/recovery-requests", label: "Recovery Requests", icon: LifeBuoy, value: "recovery-requests", canView: superAdmin },
 ] as const;

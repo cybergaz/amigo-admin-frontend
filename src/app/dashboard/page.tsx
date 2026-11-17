@@ -8,7 +8,7 @@ import CreateUserDialog from '@/components/CreateUserDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PageShell } from '@/components/common/page-shell';
-import { Users, UserCheck, Shield, Phone, UserPlus, KeyRound } from 'lucide-react';
+import { Users, UserCheck, Shield, Phone, UserPlus, KeyRound, LifeBuoy } from 'lucide-react';
 import { api_client } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -144,6 +144,12 @@ function DashboardContent() {
               <Button variant="outline" className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4" />
                 Reset-PIN Requests
+              </Button>
+            </Link>
+            <Link href="/dashboard/recovery-requests">
+              <Button variant="outline" className="flex items-center gap-2">
+                <LifeBuoy className="h-4 w-4" />
+                Recovery Requests
               </Button>
             </Link>
             <Button className="flex items-center gap-2" onClick={() => setCreateOpen(true)}>

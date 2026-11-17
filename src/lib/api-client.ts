@@ -21,6 +21,8 @@ interface UserType {
   } | null;
   ip_address: string | null;
   app_version: string | null;
+  // Reversible delete: set while the account is deleted (absent on older backends).
+  deleted_at?: string | null;
 }
 
 interface AdminUserType {
@@ -283,6 +285,68 @@ interface ReportsResponse {
 }
 
 
+// --- Reversible account delete + recovery requests (ACCOUNT_RECOVERY_PLAN §4) ---
+
+type AccountDeletedBy = "self" | "admin";
+
+interface DeletedAccount {
+  user_id: string;
+  // Real name, taken from the snapshot kept at delete time.
+  name: string | null;
+  phone: string | null;
+  deleted_at: string;
+  by: AccountDeletedBy | string;
+  deleted_by: string | null;
+  groups_count: number;
+  messages_count: number;
+}
+
+interface DeletedAccountGroup {
+  chat_id: string;
+  name: string | null;
+  members_count: number;
+  is_owner_before: boolean;
+}
+
+interface DeletedAccountDetail extends DeletedAccount {
+  snapshot_name: string | null;
+  profile_pic: string | null;
+  groups: DeletedAccountGroup[];
+  last_messages_at: string | null;
+}
+
+interface DeletedAccountsResponse {
+  items: DeletedAccount[];
+  total: number;
+}
+
+type RecoveryRequestStatus = "pending" | "restored" | "dismissed";
+
+interface RecoveryRequest {
+  id: string;
+  phone: string;
+  // Name the person typed in the app.
+  name: string;
+  // Matched deleted account (null if it was erased since).
+  user_id: string | null;
+  // Stored name of the matched account (from its snapshot).
+  account_name: string | null;
+  status: RecoveryRequestStatus | string;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+interface RecoveryRequestsResponse {
+  items: RecoveryRequest[];
+  total: number;
+}
+
+// Failure bodies carry a machine code in `error` (house envelope), which the
+// shared ApiResponse type does not declare.
+const apiErrorCode = (res: ApiResponse<unknown>): string | undefined =>
+  (res as ApiResponse<unknown> & { error?: string }).error;
+
+
 const get_token_from_cookies = () => {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp('(^| )' + 'access_token' + '=([^;]+)'));
@@ -382,7 +446,7 @@ class ApiClient {
     });
   }
 
-  async deleteUser(id: number): Promise<ApiResponse<{ id: number; name: string }>> {
+  async deleteUser(id: number | string): Promise<ApiResponse<{ id: number; name: string }>> {
     return this.makeRequest<{ id: number; name: string }>(`/admin/delete-user/${id}`, {
       method: 'DELETE',
     });
@@ -886,7 +950,9 @@ class ApiClient {
     );
   }
 
-  // Anonymizing delete (keeps report links + evidence). Super admin only.
+  // Reversible delete: the account shows as "Deleted account", is signed out
+  // and can't log in; all data is kept and a super admin can restore it.
+  // Super admin only (backend answers 403 `forbidden` otherwise).
   async adminDeleteAccount(userId: string): Promise<ApiResponse<{ deleted: boolean; id: string }>> {
     return this.makeRequest<{ deleted: boolean; id: string }>(
       `/admin/users/${encodeURIComponent(userId)}/delete-account`,
@@ -894,8 +960,48 @@ class ApiClient {
     );
   }
 
+  // --- Deleted accounts: any admin can view, only the super admin restores. ---
+  async getDeletedAccounts(page: number = 1, limit: number = 20, search: string = ''): Promise<ApiResponse<DeletedAccountsResponse>> {
+    const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+    const q = search.trim();
+    if (q) query.set('search', q);
+    return this.makeRequest<DeletedAccountsResponse>(`/admin/deleted-accounts?${query.toString()}`);
+  }
+
+  async getDeletedAccount(userId: string): Promise<ApiResponse<DeletedAccountDetail>> {
+    return this.makeRequest<DeletedAccountDetail>(`/admin/deleted-accounts/${encodeURIComponent(userId)}`);
+  }
+
+  async restoreAccount(userId: string): Promise<ApiResponse<{ restored: boolean }>> {
+    return this.makeRequest<{ restored: boolean }>(
+      `/admin/users/${encodeURIComponent(userId)}/restore`,
+      { method: 'POST', body: JSON.stringify({}) },
+    );
+  }
+
+  // --- Account recovery requests (super admin only). ---
+  async getRecoveryRequests(status: RecoveryRequestStatus = 'pending', page: number = 1, limit: number = 20): Promise<ApiResponse<RecoveryRequestsResponse>> {
+    const query = new URLSearchParams({ status, page: String(page), limit: String(limit) });
+    return this.makeRequest<RecoveryRequestsResponse>(`/admin/recovery-requests?${query.toString()}`);
+  }
+
+  async restoreRecoveryRequest(id: string): Promise<ApiResponse<{ restored: boolean }>> {
+    return this.makeRequest<{ restored: boolean }>(
+      `/admin/recovery-requests/${encodeURIComponent(id)}/restore`,
+      { method: 'POST', body: JSON.stringify({}) },
+    );
+  }
+
+  async dismissRecoveryRequest(id: string): Promise<ApiResponse<unknown>> {
+    return this.makeRequest<unknown>(
+      `/admin/recovery-requests/${encodeURIComponent(id)}/dismiss`,
+      { method: 'POST', body: JSON.stringify({}) },
+    );
+  }
+
 }
 
-export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup, type AdminPinEvent, type AdminPinEventsResponse, type DeviceChangeRequest, type DeviceChangeRequestsResponse, type SingleDeviceLock, type PinResetRequest, type PinResetRequestsResponse, type ReportTargetType, type ReportReason, type ReportStatus, type ReportStatusFilter, type ReportPersonRef, type ReportChatRef, type ReportListItem, type ReportEvidence, type ReportEvidenceMessage, type ReportDetail, type ReportsResponse };
+export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup, type AdminPinEvent, type AdminPinEventsResponse, type DeviceChangeRequest, type DeviceChangeRequestsResponse, type SingleDeviceLock, type PinResetRequest, type PinResetRequestsResponse, type ReportTargetType, type ReportReason, type ReportStatus, type ReportStatusFilter, type ReportPersonRef, type ReportChatRef, type ReportListItem, type ReportEvidence, type ReportEvidenceMessage, type ReportDetail, type ReportsResponse, type AccountDeletedBy, type DeletedAccount, type DeletedAccountGroup, type DeletedAccountDetail, type DeletedAccountsResponse, type RecoveryRequestStatus, type RecoveryRequest, type RecoveryRequestsResponse };
+export { apiErrorCode };
 
 export const api_client = new ApiClient();

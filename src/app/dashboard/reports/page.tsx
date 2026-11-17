@@ -22,6 +22,7 @@ import type { ApiResponse } from "@/types/common.types";
 import { toast } from "sonner";
 import BouncingBalls from "@/components/ui/bouncing-balls";
 import { cn } from "@/lib/utils";
+import { DELETE_RESTORABLE_COPY, deleteErrorMessage } from "@/lib/account-restore";
 
 const LIMIT = 20;
 const NOTE_MAX = 500;
@@ -54,8 +55,7 @@ const CHAT_TYPE_LABELS: Record<string, string> = {
   broadcast: "Broadcast list",
 };
 
-const DELETE_CONFIRM_COPY =
-  "Delete this account? Their name, photo and number are removed and they are signed out. This can't be undone.";
+const DELETE_CONFIRM_COPY = `Delete this account? ${DELETE_RESTORABLE_COPY}`;
 
 // Failure bodies carry a machine code in `error` (house envelope), which the
 // shared ApiResponse type does not declare.
@@ -343,19 +343,12 @@ export default function ReportsPage() {
       setProcessing(true);
       const response = await api_client.adminDeleteAccount(target.id);
       if (response.success) {
-        toast.success(`${target.name || "The account"} was deleted`);
+        toast.success(`${target.name || "The account"} was deleted. A super admin can restore it from Deleted Accounts.`);
         setConfirmDeleteOpen(false);
         await loadDetail(detail.id);
         fetchReports(page, filter);
       } else {
-        const code = errorCode(response);
-        if (code === "admin_cannot_delete") {
-          toast.error("Admin accounts can't be deleted here.");
-        } else if (code === "user_not_found") {
-          toast.error("This account no longer exists.");
-        } else {
-          toast.error(response.message || "Failed to delete the account");
-        }
+        toast.error(deleteErrorMessage(errorCode(response), response.message));
         setConfirmDeleteOpen(false);
       }
     } catch {

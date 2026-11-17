@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { api_client, type UserType, type PaginatedUsersResponse } from '@/lib/api-client';
+import { api_client, apiErrorCode, type UserType, type PaginatedUsersResponse } from '@/lib/api-client';
+import { DELETE_RESTORABLE_COPY, ERASE_COPY, deleteErrorMessage } from '@/lib/account-restore';
 import {
   Table,
   TableBody,
@@ -39,7 +40,8 @@ import {
   Settings,
   Eye,
   Search,
-  Trash2
+  Trash2,
+  UserX
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn, formatString } from '@/lib/utils';
@@ -359,7 +361,10 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  // Trash button: choose "Delete (can be restored)" or "Erase permanently";
+  // erase then asks a second time.
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [eraseConfirmOpen, setEraseConfirmOpen] = useState(false);
   const [locationInfo, setLocationInfo] = useState<LocationInfo | null>(null);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -530,9 +535,33 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
 
   const handleDeleteClick = (user: UserType) => {
     setSelectedUser(user);
+    setEraseConfirmOpen(false);
     setDeleteDialogOpen(true);
   };
 
+  // Reversible delete (same endpoint as the Reports page).
+  const handleSoftDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setDeleting(true);
+      const response = await api_client.adminDeleteAccount(String(selectedUser.id));
+
+      if (response.success) {
+        toast.success(`"${selectedUser.name}" was deleted. A super admin can restore it from Deleted Accounts.`);
+        setDeleteDialogOpen(false);
+        fetchUsers(pagination.currentPage, searchTerm);
+      } else {
+        toast.error(deleteErrorMessage(apiErrorCode(response), response.message));
+      }
+    } catch {
+      toast.error('Failed to delete the account');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Hard erase (DELETE /admin/delete-user/:id). Cannot be undone.
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
 
@@ -541,7 +570,8 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
       const response = await api_client.deleteUser(selectedUser.id);
 
       if (response.success) {
-        toast.success(`User "${selectedUser.name}" has been permanently deleted`);
+        toast.success(`User "${selectedUser.name}" has been permanently erased`);
+        setEraseConfirmOpen(false);
         setDeleteDialogOpen(false);
         fetchUsers(pagination.currentPage, searchTerm);
       } else {
@@ -731,7 +761,10 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium">{user.name}</p>
+                          <p className="font-medium">
+                            {user.name}
+                            {user.deleted_at && <Badge variant="destructiveLite" className="ml-2">Deleted</Badge>}
+                          </p>
                           {user.phone && (
                             <p className="text-sm text-gray-500">{user.phone}</p>
                           )}
@@ -806,7 +839,10 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{user.name}</p>
+                    <p className="font-medium truncate">
+                      {user.name}
+                      {user.deleted_at && <Badge variant="destructiveLite" className="ml-2">Deleted</Badge>}
+                    </p>
                     {user.phone && (
                       <p className="text-sm text-gray-500 truncate">{user.phone}</p>
                     )}
@@ -1178,34 +1214,116 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
         </DialogContent>
       </Dialog>
 
-      {/* Delete User Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Delete choice: reversible delete or permanent erase */}
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !deleting) {
+            setDeleteDialogOpen(false);
+            setEraseConfirmOpen(false);
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2 text-red-600">
-              <Trash2 className="h-5 w-5" />
-              <span>PERMANENT DELETE WARNING</span>
+            <DialogTitle className="flex items-center space-x-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
+              <span>Delete this user?</span>
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Extreme Warning Section */}
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 text-sm space-y-1 min-w-0">
+              <div className="font-semibold break-words">
+                {selectedUser?.name}
+                {selectedUser?.deleted_at && <Badge variant="destructiveLite" className="ml-2">Deleted</Badge>}
+              </div>
+              <div className="text-gray-600 break-all">{selectedUser?.phone || selectedUser?.email || 'No number'}</div>
+            </div>
+
+            <div className="rounded-lg border p-4 space-y-2">
+              <h3 className="font-semibold flex items-center gap-2">
+                <UserX className="h-4 w-4" />
+                Delete (can be restored)
+              </h3>
+              <p className="text-sm text-gray-600">{DELETE_RESTORABLE_COPY}</p>
+              <Button
+                onClick={handleSoftDeleteUser}
+                disabled={deleting || !!selectedUser?.deleted_at}
+                className="w-full"
+              >
+                {deleting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : selectedUser?.deleted_at ? (
+                  'Already deleted'
+                ) : (
+                  'Delete (can be restored)'
+                )}
+              </Button>
+            </div>
+
+            <div className="rounded-lg border border-red-300 bg-red-50 p-4 space-y-2">
+              <h3 className="font-semibold text-red-700 flex items-center gap-2">
+                <Trash2 className="h-4 w-4" />
+                Erase permanently
+              </h3>
+              <p className="text-sm text-red-700">{ERASE_COPY}</p>
+              <Button
+                variant="destructive"
+                onClick={() => { setDeleteDialogOpen(false); setEraseConfirmOpen(true); }}
+                disabled={deleting}
+                className="w-full bg-red-600 hover:bg-red-700"
+              >
+                Erase permanently...
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleting}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Erase permanently: second confirmation */}
+      <Dialog
+        open={eraseConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setEraseConfirmOpen(false);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              <span>Erase permanently?</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
             <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4">
-              <h3 className="font-bold text-red-700 mb-2 text-lg">⚠️ CRITICAL ACTION</h3>
               <p className="text-red-700 font-semibold mb-2">
-                This action is PERMANENT and IRREVERSIBLE!
+                This cannot be undone.
               </p>
               <ul className="list-disc list-inside text-red-600 text-sm space-y-1">
-                <li>User will be completely removed from the database</li>
-                <li>All user data will be permanently deleted</li>
-                <li>This action CANNOT be undone</li>
-                <li>No recovery option will be available</li>
+                <li>The user is removed from the database with all their data</li>
+                <li>The account can never be restored</li>
+                <li>Choose &quot;Delete (can be restored)&quot; instead if you might need it back</li>
               </ul>
             </div>
 
-            {/* User Info Section */}
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <h3 className="font-semibold mb-3">User to be deleted:</h3>
+              <h3 className="font-semibold mb-3">User to be erased:</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between gap-3 min-w-0">
                   <span className="font-medium shrink-0">Name:</span>
@@ -1231,23 +1349,16 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
                 </div>
               </div>
             </div>
-
-            {/* Final Warning */}
-            <div className="bg-yellow-50 border border-yellow-400 rounded-lg p-3">
-              <p className="text-yellow-800 text-sm font-medium text-center">
-                🛑 Please confirm you understand this action is permanent and cannot be reversed
-              </p>
-            </div>
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
+              onClick={() => setEraseConfirmOpen(false)}
               disabled={deleting}
               className="w-full sm:w-auto"
             >
-              Cancel (Safe Option)
+              Cancel
             </Button>
             <Button
               variant="destructive"
@@ -1258,12 +1369,12 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
               {deleting ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
+                  Erasing...
                 </>
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Yes, Permanently Delete User
+                  Yes, erase permanently
                 </>
               )}
             </Button>
