@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CountryCodeSelect } from '@/components/UsersTable';
 import { api_client } from '@/lib/api-client';
+import { usePinLoginEnabled } from '@/lib/auth-methods';
 import { toast } from 'sonner';
 import { UserPlus, ArrowLeft, Loader2 } from 'lucide-react';
 
@@ -27,6 +28,15 @@ interface CreateUserDialogProps {
 
 type Phase = 'form' | 'confirm';
 
+// The create-user route still requires a starter PIN. While "PIN login" is off
+// the admin never sees or shares it, so we send a random one the user never needs
+// (they sign in with the phone code instead).
+const randomPin = (): string => {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return String(buf[0] % 10000).padStart(4, '0');
+};
+
 const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange, onCreated }) => {
   const [phase, setPhase] = useState<Phase>('form');
   const [name, setName] = useState('');
@@ -34,6 +44,14 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [creating, setCreating] = useState(false);
+  // Hidden (not removed) PIN field while the "PIN login" switch is off. While the
+  // setting is loading we keep today's form (PIN shown), so nothing changes when on.
+  const pinLoginState = usePinLoginEnabled();
+  // PIN mode is frozen when the admin presses Continue, so a late settings answer
+  // can't swap the PIN they typed (and maybe already shared) for a random one.
+  const [confirmShowPin, setConfirmShowPin] = useState<boolean | null>(null);
+  const showPin =
+    phase === 'confirm' && confirmShowPin !== null ? confirmShowPin : pinLoginState !== false;
 
   const fullPhone = `${countryCode}${phone.trim()}`;
 
@@ -43,6 +61,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
     setCountryCode('+91');
     setPhone('');
     setPin('');
+    setConfirmShowPin(null);
     setCreating(false);
   };
 
@@ -61,17 +80,18 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
       toast.error('Please enter a valid phone number');
       return;
     }
-    if (pin.length !== 4) {
+    if (showPin && pin.length !== 4) {
       toast.error('PIN must be exactly 4 digits');
       return;
     }
+    setConfirmShowPin(showPin);
     setPhase('confirm');
   };
 
   const handleCreate = async () => {
     setCreating(true);
     try {
-      const res = await api_client.createUser(name.trim(), fullPhone, pin);
+      const res = await api_client.createUser(name.trim(), fullPhone, showPin ? pin : randomPin());
       if (res.success) {
         toast.success(`User "${name.trim()}" created`);
         onCreated?.(name.trim());
@@ -98,7 +118,9 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
           </DialogTitle>
           <DialogDescription>
             {phase === 'form'
-              ? 'The user logs in with this phone + PIN, then is asked to set their own PIN.'
+              ? showPin
+                ? 'The user logs in with this phone + PIN, then is asked to set their own PIN.'
+                : 'The user signs in with this phone number and the code sent to it.'
               : 'Review the details before creating the account.'}
           </DialogDescription>
         </DialogHeader>
@@ -130,6 +152,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
               </div>
             </div>
 
+            {showPin && (
             <div className="space-y-1.5">
               <Label htmlFor="cu-pin">Password PIN (4 digits)</Label>
               <Input
@@ -145,6 +168,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
                 The user will be forced to change this to their own PIN on first login.
               </p>
             </div>
+            )}
           </div>
         ) : (
           <div className="space-y-3 py-2">
@@ -157,17 +181,28 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
                 <span className="font-medium text-gray-600 shrink-0">Phone</span>
                 <span className="font-mono min-w-0 text-right break-all">{fullPhone}</span>
               </div>
+              {showPin && (
               <div className="flex justify-between gap-3 min-w-0">
                 <span className="font-medium text-gray-600 shrink-0">Password PIN</span>
                 <span className="font-mono tracking-widest min-w-0 text-right break-all">{pin}</span>
               </div>
+              )}
             </div>
+            {showPin ? (
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-3">
               <p className="text-amber-800 text-xs">
                 Share this phone + PIN with the user so they can log in. They&apos;ll be
                 prompted to set their own PIN (and an Admin PIN) right after.
               </p>
             </div>
+            ) : (
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-3">
+              <p className="text-amber-800 text-xs">
+                Tell the user to open Amigo and sign in with this phone number. They&apos;ll
+                get a code by SMS.
+              </p>
+            </div>
+            )}
           </div>
         )}
 
@@ -181,7 +216,14 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange,
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setPhase('form')} disabled={creating}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setConfirmShowPin(null);
+                  setPhase('form');
+                }}
+                disabled={creating}
+              >
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Back
               </Button>

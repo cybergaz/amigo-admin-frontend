@@ -139,6 +139,22 @@ interface SingleDeviceLock {
   updated_at: string | null;
 }
 
+// App sign-in switches (app_settings key "auth_methods"). The admin-panel
+// email/password login is not part of this and is never gated.
+interface AuthMethods {
+  firebase_phone: boolean;
+  whatsapp_otp: boolean;
+  sms_otp: boolean;
+  pin_login: boolean;
+  guest_login: boolean;
+}
+
+interface AuthMethodsSetting {
+  methods: AuthMethods;
+  updated_at: string | null;
+  updated_by_name: string | null;
+}
+
 interface DashboardStats {
   totalUsers: number;
   onlineUsers: number;
@@ -932,6 +948,21 @@ class ApiClient {
     });
   }
 
+  // App sign-in methods — super admin only (sub_admin gets 403 `forbidden`).
+  async getAuthMethods(): Promise<ApiResponse<AuthMethodsSetting>> {
+    return this.makeRequest<AuthMethodsSetting>('/admin/auth-methods');
+  }
+
+  // Send only the keys that change; the server merges and answers the full result.
+  // 400 `no_login_method` if every real sign-in method would be off,
+  // 400 `invalid_input` for unknown keys / non-booleans.
+  async updateAuthMethods(methods: Partial<AuthMethods>): Promise<ApiResponse<AuthMethodsSetting>> {
+    return this.makeRequest<AuthMethodsSetting>('/admin/auth-methods', {
+      method: 'PUT',
+      body: JSON.stringify({ methods }),
+    });
+  }
+
   // --- Account safety: user reports. Admin, or sub_admin with "manage-chats". ---
   async getReports(page: number = 1, limit: number = 20, status: ReportStatusFilter = 'open'): Promise<ApiResponse<ReportsResponse>> {
     const query = new URLSearchParams({ page: String(page), limit: String(limit), status });
@@ -1001,7 +1032,7 @@ class ApiClient {
 
 }
 
-export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup, type AdminPinEvent, type AdminPinEventsResponse, type DeviceChangeRequest, type DeviceChangeRequestsResponse, type SingleDeviceLock, type PinResetRequest, type PinResetRequestsResponse, type ReportTargetType, type ReportReason, type ReportStatus, type ReportStatusFilter, type ReportPersonRef, type ReportChatRef, type ReportListItem, type ReportEvidence, type ReportEvidenceMessage, type ReportDetail, type ReportsResponse, type AccountDeletedBy, type DeletedAccount, type DeletedAccountGroup, type DeletedAccountDetail, type DeletedAccountsResponse, type RecoveryRequestStatus, type RecoveryRequest, type RecoveryRequestsResponse };
+export { type UserType, type AdminUserType, type UserPermissions, type MarqueeBanner, type PaginatedUsersResponse, type DashboardStats, type Community, type CommunityMember, type CommunityGroup, type StandaloneGroup, type AdminPinEvent, type AdminPinEventsResponse, type DeviceChangeRequest, type DeviceChangeRequestsResponse, type SingleDeviceLock, type AuthMethods, type AuthMethodsSetting, type PinResetRequest, type PinResetRequestsResponse, type ReportTargetType, type ReportReason, type ReportStatus, type ReportStatusFilter, type ReportPersonRef, type ReportChatRef, type ReportListItem, type ReportEvidence, type ReportEvidenceMessage, type ReportDetail, type ReportsResponse, type AccountDeletedBy, type DeletedAccount, type DeletedAccountGroup, type DeletedAccountDetail, type DeletedAccountsResponse, type RecoveryRequestStatus, type RecoveryRequest, type RecoveryRequestsResponse };
 export { apiErrorCode };
 
 export const api_client = new ApiClient();

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { api_client, apiErrorCode, type UserType, type PaginatedUsersResponse } from '@/lib/api-client';
+import { usePinLoginEnabled } from '@/lib/auth-methods';
 import { DELETE_RESTORABLE_COPY, ERASE_COPY, deleteErrorMessage } from '@/lib/account-restore';
 import {
   Table,
@@ -377,6 +378,8 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
   const [showAdminPinInput, setShowAdminPinInput] = useState(false);
   const [newAdminPin, setNewAdminPin] = useState('');
   const [updatingAdminPin, setUpdatingAdminPin] = useState(false);
+  // PIN tools are hidden (not removed) while the "PIN login" switch is off.
+  const pinLoginEnabled = usePinLoginEnabled() === true;
 
   const fetchUsers = async (page: number = 1, search?: string) => {
     try {
@@ -1102,7 +1105,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
             </div>
 
             {/* Change Password PIN — super-admin only. Reveals an inline input. */}
-            {isSuperAdmin && (
+            {isSuperAdmin && pinLoginEnabled && (
               <div className="space-y-2">
                 <h3 className="font-semibold">Password PIN</h3>
                 {!showPinInput ? (
@@ -1151,7 +1154,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ className, searchTerm = '', onS
             )}
 
             {/* Change / override Admin PIN — super-admin only. */}
-            {isSuperAdmin && (
+            {isSuperAdmin && pinLoginEnabled && (
               <div className="space-y-2">
                 <h3 className="font-semibold">Admin PIN (decoy)</h3>
                 {!showAdminPinInput ? (

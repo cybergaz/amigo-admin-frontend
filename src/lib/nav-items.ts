@@ -11,6 +11,7 @@ import {
   Flag,
   UserX,
   LifeBuoy,
+  LogIn,
 } from "lucide-react";
 import type { UserPermissions } from "@/lib/api-client";
 
@@ -28,8 +29,10 @@ export const NAV_ITEMS = [
   { href: "/dashboard/device-requests", label: "Device Requests", icon: MonitorSmartphone, value: "device-requests", canView: can("admin-management") },
   { href: "/dashboard/marquee-banner", label: "Marquee Banner", icon: Megaphone, value: "marquee-banner", canView: superAdmin },
   { href: "/dashboard/admin-pin-usage", label: "Admin PIN Usage", icon: ShieldAlert, value: "admin-pin-usage", canView: superAdmin },
-  { href: "/dashboard/pin-reset-requests", label: "Reset PIN Requests", icon: KeyRound, value: "pin-reset-requests", canView: superAdmin },
+  // requiresPinLogin: hidden (not removed) while the "PIN login" switch is off.
+  { href: "/dashboard/pin-reset-requests", label: "Reset PIN Requests", icon: KeyRound, value: "pin-reset-requests", canView: superAdmin, requiresPinLogin: true },
   { href: "/dashboard/reports", label: "Reports", icon: Flag, value: "reports", canView: can("manage-chats") },
   { href: "/dashboard/deleted-accounts", label: "Deleted Accounts", icon: UserX, value: "deleted-accounts", canView: anyAdmin },
   { href: "/dashboard/recovery-requests", label: "Recovery Requests", icon: LifeBuoy, value: "recovery-requests", canView: superAdmin },
+  { href: "/dashboard/login-methods", label: "Login Methods", icon: LogIn, value: "login-methods", canView: superAdmin },
 ] as const;

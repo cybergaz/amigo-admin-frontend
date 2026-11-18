@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { api_client, type UserPermissions } from "@/lib/api-client";
 import BouncingBalls from "@/components/ui/bouncing-balls";
 import { NAV_ITEMS } from "@/lib/nav-items";
+import { loadPinLoginEnabled, onPinLoginChanged } from "@/lib/auth-methods";
 
 export default function DashboardLayout({
   children,
@@ -25,10 +26,14 @@ export default function DashboardLayout({
   const router = useRouter();
   const [userPermissions, setUserPermissions] = useState<UserPermissions | null>(null);
   const [loading, setLoading] = useState(true);
+  // Hides PIN-only nav items while the "PIN login" switch is off (super admin only).
+  const [pinLoginEnabled, setPinLoginEnabled] = useState(true);
 
   useEffect(() => {
     fetchUserPermissions();
   }, []);
+
+  useEffect(() => onPinLoginChanged(setPinLoginEnabled), []);
 
   // Keep the active tab scrolled into view within the horizontal strip on
   // narrower desktops where the full 9-tab strip cannot fit at once.
@@ -44,6 +49,9 @@ export default function DashboardLayout({
       const response = await api_client.getUserPermissions();
       if (response.success && response.data) {
         setUserPermissions(response.data);
+        if (response.data.role === "admin") {
+          setPinLoginEnabled(await loadPinLoginEnabled());
+        }
       }
     } catch (error) {
       console.error("Failed to fetch user permissions:", error);
@@ -61,7 +69,11 @@ export default function DashboardLayout({
   }
 
   const items = userPermissions
-    ? NAV_ITEMS.filter((i) => i.canView(userPermissions))
+    ? NAV_ITEMS.filter(
+        (i) =>
+          i.canView(userPermissions) &&
+          (pinLoginEnabled || !("requiresPinLogin" in i && i.requiresPinLogin)),
+      )
     : [];
   const activeValue =
     items.find((i) => i.href === pathname)?.value ?? "dashboard";

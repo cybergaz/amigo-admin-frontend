@@ -12,6 +12,8 @@ import { PageShell } from "@/components/common/page-shell";
 import { api_client, type PinResetRequest } from "@/lib/api-client";
 import { toast } from "sonner";
 import BouncingBalls from "@/components/ui/bouncing-balls";
+import Link from "next/link";
+import { usePinLoginEnabled } from "@/lib/auth-methods";
 
 const LIMIT = 20;
 
@@ -28,6 +30,8 @@ export default function PinResetRequests() {
   const [pinValue, setPinValue] = useState("");
   // "Dismiss" confirmation dialog.
   const [dismissTarget, setDismissTarget] = useState<PinResetRequest | null>(null);
+  // This page is hidden (not removed) while the "PIN login" switch is off.
+  const pinLoginEnabled = usePinLoginEnabled();
 
   const fetchRequests = useCallback(async (p: number) => {
     try {
@@ -132,6 +136,23 @@ export default function PinResetRequests() {
         );
     }
   };
+
+  if (pinLoginEnabled === false) {
+    return (
+      <PageShell className="py-4 sm:py-6">
+        <div className="flex flex-col items-center justify-center gap-3 min-h-[50vh] text-center">
+          <KeyRound className="w-10 h-10 text-accent-gray" />
+          <p className="text-accent-gray max-w-md">
+            PIN login is turned off, so reset-PIN requests are hidden. Turn PIN login back on in
+            Login Methods to use this page again.
+          </p>
+          <Link href="/dashboard/login-methods">
+            <Button variant="outline">Open Login Methods</Button>
+          </Link>
+        </div>
+      </PageShell>
+    );
+  }
 
   if (loading && requests.length === 0) {
     return (

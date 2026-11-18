@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { PageShell } from '@/components/common/page-shell';
 import { Users, UserCheck, Shield, Phone, UserPlus, KeyRound, LifeBuoy } from 'lucide-react';
 import { api_client } from '@/lib/api-client';
+import { usePinLoginEnabled } from '@/lib/auth-methods';
 import { toast } from 'sonner';
 
 interface DashboardStats {
@@ -41,6 +42,8 @@ function DashboardContent() {
   const [searchTerm, setSearchTerm] = useState(searchParam);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  // PIN tools are hidden (not removed) while the "PIN login" switch is off.
+  const pinLoginEnabled = usePinLoginEnabled() === true;
 
   const fetchDashboardStats = async () => {
     try {
@@ -140,12 +143,14 @@ function DashboardContent() {
         {/* Super-admin user-management toolbar */}
         {isSuperAdmin && (
           <div className="flex flex-wrap items-center justify-end gap-3 mb-4">
-            <Link href="/dashboard/pin-reset-requests">
-              <Button variant="outline" className="flex items-center gap-2">
-                <KeyRound className="h-4 w-4" />
-                Reset-PIN Requests
-              </Button>
-            </Link>
+            {pinLoginEnabled && (
+              <Link href="/dashboard/pin-reset-requests">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <KeyRound className="h-4 w-4" />
+                  Reset-PIN Requests
+                </Button>
+              </Link>
+            )}
             <Link href="/dashboard/recovery-requests">
               <Button variant="outline" className="flex items-center gap-2">
                 <LifeBuoy className="h-4 w-4" />
