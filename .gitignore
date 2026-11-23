@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# secrets: never commit keys (they live outside git); .githooks/secret-scan.sh also blocks them.
+!.env.example
+!.env.*.example
+*.p8
+*.p12
+*.key
+*service-account*.json
+*adminsdk*.json
+amigo-ec5be-*.json

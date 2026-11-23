@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Blocks a commit that adds a key, password or token (.githooks/secret-scan.sh).
+exec "$(git rev-parse --show-toplevel)/.githooks/secret-scan.sh" --staged
